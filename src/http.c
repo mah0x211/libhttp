@@ -783,3 +783,23 @@ void http_free( http_t *r )
 }
 
 
+int http_getheader_at( http_t *r, uintptr_t *key, uint16_t *klen, 
+                       uintptr_t *val, uint16_t *vlen, uint8_t at )
+{
+    if( at < r->nheader ){
+        uint8_t *mem = GET_HKEY_PTR( r, at );
+    
+        *key = *(uintptr_t*)mem;
+        *klen = *(uint16_t*)&mem[sizeof( uintptr_t )];
+        
+        mem += HKEY_SIZE;
+        *val = *(uintptr_t*)mem;
+        *vlen = *(uint16_t*)&mem[sizeof( uintptr_t )];
+        
+        return 0;
+    }
+    
+    return -1;
+}
+
+

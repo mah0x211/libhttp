@@ -158,6 +158,12 @@ void http_free( http_t *r );
 int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen );
 
+/**
+ * get the header key-value pair at specified index
+ */
+int http_getheader_at( http_t *r, uintptr_t *key, uint16_t *klen,
+                       uintptr_t *val, uint16_t *vlen, uint8_t at );
+
 
 #endif
 
