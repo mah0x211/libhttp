@@ -266,17 +266,6 @@ static const unsigned char TEXTC_TBL[256] = {
 }while(0)
 
 
-typedef union {
-    char buf[8];
-    uint64_t bits;
-} str64bit_t;
-
-#define str64bit_init( cmp, buf, len ) do{ \
-    (cmp)->bits = 0; \
-    memcpy( (cmp), buf, ( (len) > 8 ) ? 8 : len ); \
-}while(0)
-
-
 static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
 
 static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
