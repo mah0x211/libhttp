@@ -47,6 +47,52 @@
 
 
 /**
+ *  structure for 64 bit comparison
+ */
+typedef union {
+    char str[8];
+    uint64_t bit;
+} match64bit_u;
+
+// methods
+static match64bit_u M_GET = {
+    .str = "GET"
+};
+static match64bit_u M_HEAD = {
+    .str = "HEAD"
+};
+static match64bit_u M_POST = {
+    .str = "POST"
+};
+static match64bit_u M_PUT = {
+    .str = "PUT"
+};
+static match64bit_u M_DELETE = {
+    .str = "DELETE"
+};
+static match64bit_u M_OPTIONS = {
+    .str = "OPTIONS"
+};
+static match64bit_u M_TRACE = {
+    .str = "TRACE"
+};
+static match64bit_u M_CONNECT = {
+    .str = "CONNECT"
+};
+
+// versions
+static match64bit_u V_09 = {
+    .str = "HTTP/0.9"
+};
+static match64bit_u V_10 = {
+    .str = "HTTP/1.0"
+};
+static match64bit_u V_11 = {
+    .str = "HTTP/1.1"
+};
+
+
+/**
  * RFC 3986
  *
  * alpha         = lowalpha | upalpha
@@ -487,46 +533,41 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
     else if( delim && delim[1] )
     {
         // calc index(same as token-length)
-        char *ver = buf + r->head;
-        // calc index(same as token-length)
-        uintptr_t tail = (uintptr_t)delim - (uintptr_t)buf;
-        
-        // invalid request
-        if( delim[1] != LF ){
-            return HTTP_EVERSION;
-        }
-        // check version
-        else if( ( tail - r->head ) == VER_LEN &&
-                 ver[0] == 'H' && ver[1] == 'T' && ver[2] == 'T' &&
-                 ver[3] == 'P' && ver[4] == '/' && ver[5] == '1' &&
-                 ver[6] == '.' )
-        {
-            switch( ver[7] )
-            {
-                // HTTP/1.0
-                case '0':
-                    // illegal request if method is not the GET, HEAD or POST method
-                    if( r->protocol > HTTP_MPOST ){
-                        return HTTP_EMETHOD;
-                    }
-                    r->protocol |= HTTP_V10;
-                    goto VALID_VERSION;
-                break;
-                
-                // HTTP/1.1
-                case '1':
-                    r->protocol |= HTTP_V11;
-                    goto VALID_VERSION;
-                break;
-            }
-        }
+        size_t slen = (uintptr_t)delim - (uintptr_t)buf - r->head;
+        match64bit_u src = { .bit = 0 };
         
         // unsupported version
-        return HTTP_EVERSION;
-
-VALID_VERSION:
+        if( delim[1] != LF || len == VER_LEN ){
+            return HTTP_EVERSION;
+        }
+        
+        // check version
+        memcpy( src.str, buf + r->head, slen );
+        // HTTP/1.1
+        if( src.bit == V_11.bit ){
+            r->protocol |= HTTP_V11;
+        }
+        // HTTP/1.0
+        else if( src.bit == V_10.bit )
+        {
+            // illegal request if method is not the GET, HEAD or POST method
+            if( r->protocol > HTTP_MPOST ){
+                return HTTP_EMETHOD;
+            }
+            r->protocol |= HTTP_V10;
+        }
+        // not HTTP/0.9
+        else if( src.bit != V_09.bit )
+        {
+            // illegal request if method is not the GET method
+            if( r->protocol != HTTP_MGET ){
+                return HTTP_EMETHOD;
+            }
+            return HTTP_EVERSION;
+        }
+                
         // skip CRLF
-        r->head = r->cur = (uint16_t)tail + 2;
+        r->head = r->cur = r->head + slen + 2;
         // set next phase
         r->phase = HTTP_PHASE_HEADER;
         
@@ -619,85 +660,44 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
     // found
     else if( delim )
     {
-        switch( *buf )
-        {
-            // connect
-            case 'C':
-                if( buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'N' && 
-                    buf[4] == 'E' && buf[5] == 'C' && buf[6] == 'T' ){
-                    r->protocol = HTTP_MCONNECT;
-                    goto VALID_METHOD;
-                }
-            break;
-            
-            // delete
-            case 'D':
-                if( buf[1] == 'E' && buf[2] == 'L' && buf[3] == 'E' && 
-                    buf[4] == 'T' && buf[5] == 'E' ){
-                    r->protocol = HTTP_MDELETE;
-                    goto VALID_METHOD;
-                }
-            break;
-            
-            // get
-            case 'G':
-                if( buf[1] == 'E' && buf[2] == 'T' ){
-                    r->protocol = HTTP_MGET;
-                    goto VALID_METHOD;
-                }
-            break;
-            
-            // head
-            case 'H':
-                if( buf[1] == 'E' && buf[2] == 'A' && buf[3] == 'D' ){
-                    r->protocol = HTTP_MHEAD;
-                    goto VALID_METHOD;
-                }
-            break;
-            
-            // options
-            case 'O':
-                if( buf[1] == 'P' && buf[2] == 'T' && buf[3] == 'I' && 
-                    buf[4] == 'O' && buf[5] == 'N' && buf[6] == 'S' ){
-                    r->protocol = HTTP_MOPTIONS;
-                    goto VALID_METHOD;
-                }
-            break;
-            
-            case 'P':
-                switch( buf[1] )
-                {
-                    // post
-                    case 'O':
-                        if( buf[2] == 'S' && buf[3] == 'T' ){
-                            r->protocol = HTTP_MPOST;
-                            goto VALID_METHOD;
-                        }
-                    break;
-                    // put
-                    case 'U':
-                        if( buf[2] == 'T' ){
-                            r->protocol = HTTP_MPUT;
-                            goto VALID_METHOD;
-                        }
-                    break;
-                }
-            break;
-
-            // trace
-            case 'T':
-                if( buf[1] == 'R' && buf[2] == 'A' && buf[3] == 'C' && 
-                    buf[4] == 'E' ){
-                    r->protocol = HTTP_MTRACE;
-                    goto VALID_METHOD;
-                }
-            break;
+        size_t slen = (uintptr_t)delim - (uintptr_t)buf;
+        match64bit_u src = { .bit = 0 };
+        
+        if( slen > METHOD_LEN ){
+            return HTTP_EMETHOD;
+        }
+        
+        memcpy( src.str, buf, slen );
+        // check method
+        if( src.bit == M_GET.bit ){
+            r->protocol = HTTP_MGET;
+        }
+        else if( src.bit == M_POST.bit ){
+            r->protocol = HTTP_MPOST;
+        }
+        else if( src.bit == M_PUT.bit ){
+            r->protocol = HTTP_MPUT;
+        }
+        else if( src.bit == M_DELETE.bit ){
+            r->protocol = HTTP_MDELETE;
+        }
+        else if( src.bit == M_HEAD.bit ){
+            r->protocol = HTTP_MHEAD;
+        }
+        else if( src.bit == M_OPTIONS.bit ){
+            r->protocol = HTTP_MOPTIONS;
+        }
+        else if( src.bit == M_TRACE.bit ){
+            r->protocol = HTTP_MTRACE;
+        }
+        else if( src.bit == M_CONNECT.bit ){
+            r->protocol = HTTP_MCONNECT;
+        }
+        // method not implemented
+        else {
+            return HTTP_EMETHOD;
         }
 
-        // method not implemented
-        return HTTP_EMETHOD;
-
-VALID_METHOD:
         // update parse cursor, token-head and url head
         r->head = r->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
         // set next phase
