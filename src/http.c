@@ -247,13 +247,13 @@ static const unsigned char METHODC_TBL[256] = {
 
 /**
  * version characters; HTTP/X.X
- * X = 1 | 0
+ * X = 0 | 1 | 9
  */
 static const unsigned char VERC_TBL[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '.', '/', 
-    '0', '1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    'H', 0, 0, 0, 0, 0, 0, 0, 'P', 0, 0, 0, 'T'
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '.', '/',
+    '0', '1', 0, 0, 0, 0, 0, 0, 0, '9', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 'H', 0, 0, 0, 0, 0, 0, 0, 'P', 0, 0, 0, 'T'
 };
 
 /**
@@ -557,12 +557,16 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             r->protocol |= HTTP_V10;
         }
         // not HTTP/0.9
-        else if( src.bit != V_09.bit )
+        else if( src.bit == V_09.bit )
         {
             // illegal request if method is not the GET method
             if( r->protocol != HTTP_MGET ){
                 return HTTP_EMETHOD;
             }
+            r->protocol |= HTTP_V09;
+        }
+        // unsupported version
+        else {
             return HTTP_EVERSION;
         }
                 
