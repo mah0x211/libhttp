@@ -10,6 +10,12 @@ static void test_version( void )
             0,
             "GET /foo/bar/baz\r\n"
         },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V09,
+            0,
+            "GET /foo/bar/baz HTTP/0.9\r\n\r\n"
+        },
         // HTTP/1.0
         {
             HTTP_SUCCESS,
