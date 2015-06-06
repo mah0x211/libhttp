@@ -384,17 +384,13 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 
 static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    size_t remain = 0;
-    char *str = NULL;
     char *delim = NULL;
     uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( r, r->nheader );
     uintptr_t tail = 0;
     uintptr_t vlen = 0;
     
 RECHECK:
-    remain = len - r->cur;
-    str = buf + r->cur;
-    delim = strchr_brk( str, remain, CR, TEXTC_TBL );
+    delim = strchr_brk( buf + r->cur, len - r->cur, CR, TEXTC_TBL );
     
     // EILSEQ: illegal byte sequence == invalid header format
     if( errno ){
@@ -454,22 +450,20 @@ RECHECK:
 
 static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *str = NULL;
     char *delim = NULL;
-    size_t remain = 0;
     uintptr_t tail = 0;
     uintptr_t klen = 0;
     
 RECHECK:
-    str = buf + r->cur;
+    delim = buf + r->cur;
     
     // check header-tail
-    if( str[0] == CR )
+    if( delim[0] == CR )
     {
-        if( !str[1] ){
+        if( !delim[1] ){
             return HTTP_EAGAIN;
         }
-        else if( str[1] == LF ){
+        else if( delim[1] == LF ){
             // calc and save index
             r->head = r->cur = r->cur + 2;
             r->phase = HTTP_PHASE_DONE;
@@ -485,8 +479,7 @@ RECHECK:
     }
     
     // lookup seperator
-    remain = len - r->cur;
-    delim = strchr_brkrep( str, remain, COLON, HKEYC_TBL );
+    delim = strchr_brkrep( delim, len - r->cur, COLON, HKEYC_TBL );
     // EILSEQ: illegal byte sequence == invalid header format
     if( errno ){
         return HTTP_EHDRFMT;
