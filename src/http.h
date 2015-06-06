@@ -34,6 +34,7 @@ enum {
     HTTP_PHASE_METHOD,
     HTTP_PHASE_URI,
     HTTP_PHASE_VERSION,
+    HTTP_PHASE_EOL,
     HTTP_PHASE_HEADER,
     HTTP_PHASE_HKEY,
     HTTP_PHASE_HVAL,
@@ -145,12 +146,14 @@ void http_free( http_t *r );
 #define HTTP_EURILEN    -5
 /* version not support */
 #define HTTP_EVERSION   -6
+/* invalid line format */
+#define HTTP_ELINEFMT   -7
 /* invalid header format */
-#define HTTP_EHDRFMT    -7
+#define HTTP_EHDRFMT    -8
 /* too many headers */
-#define HTTP_ENHDR      -8
+#define HTTP_ENHDR      -9
 /* header-length too large */
-#define HTTP_EHDRLEN    -7
+#define HTTP_EHDRLEN    -10
 
 /**
  * parse http 0.9/1.0/1.1 request

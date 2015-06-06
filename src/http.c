@@ -192,7 +192,7 @@ static const unsigned char URIC_TBL[256] = {
  */
 
 /**
- * token = 1*<alpha | digit | "-" | "-">
+ * header name token = 1*<alpha | digit | "-" | "_">
  */
 static const unsigned char HKEYC_TBL[256] = {
 //  0  1  2  3  4  5  6  7  8 HT LF 11 12 CR 14 15 16 17 18 19 20 21 22 23 24
@@ -314,6 +314,38 @@ static const unsigned char TEXTC_TBL[256] = {
 
 static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
 
+
+/**
+ * wait the end-of-line(CRLF)
+ * HTTP/0.9 does not support the header
+ */
+static int parse_eol( http_t *r, char *buf )
+{
+    char *str = buf + r->cur;
+    
+    switch( *str )
+    {
+        // need more bytes
+        case 0:
+            return HTTP_EAGAIN;
+        
+        // check header-tail
+        case CR:
+            if( !str[1] ){
+                return HTTP_EAGAIN;
+            }
+            else if( str[1] == LF ){
+                // calc and save index
+                r->head = r->cur = r->cur + 2;
+                r->phase = HTTP_PHASE_DONE;
+                return HTTP_SUCCESS;
+            }
+        
+        default:
+            return HTTP_ELINEFMT;
+    }
+}
+
 static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *str = buf + r->cur;
@@ -332,7 +364,6 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             else if( str[1] == LF ){
                 // calc and save index
                 r->head = r->cur = r->cur + 2;
-                // set next parser null
                 r->phase = HTTP_PHASE_DONE;
                 return HTTP_SUCCESS;
             }
@@ -441,7 +472,6 @@ RECHECK:
         else if( str[1] == LF ){
             // calc and save index
             r->head = r->cur = r->cur + 2;
-            // set next parser null
             r->phase = HTTP_PHASE_DONE;
             return HTTP_SUCCESS;
         }
@@ -564,6 +594,12 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
                 return HTTP_EMETHOD;
             }
             r->protocol |= HTTP_V09;
+            // skip CRLF
+            r->head = r->cur = r->head + slen + 2;
+            // set next phase
+            r->phase = HTTP_PHASE_EOL;
+            
+            return parse_eol( r, buf );
         }
         // unsupported version
         else {
@@ -738,6 +774,9 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         case HTTP_PHASE_VERSION:
             return parse_ver( r, buf, len, maxhdrlen );
 
+        case HTTP_PHASE_EOL:
+            return parse_eol( r, buf );
+            
         case HTTP_PHASE_HEADER:
             return parse_header( r, buf, len, maxhdrlen );
         
