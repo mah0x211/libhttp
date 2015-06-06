@@ -31,13 +31,13 @@ static void test_version( void )
             "GET /foo/bar/baz HTTP/1.1\r\n\r\n"
         },
         // end of request
-        { 0, 0, 0, NULL }
+        { 0, 0, 0, "" }
     };
     test_req_t *ptr = req;
     http_t *r = http_alloc(0);
     int rc;
     
-    while( ptr->entity )
+    while( ptr->request )
     {
         rc = http_req_parse( r, ptr->entity, strlen( ptr->entity ), 
                              INT16_MAX, INT16_MAX );

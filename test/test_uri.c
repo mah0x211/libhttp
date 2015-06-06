@@ -74,13 +74,13 @@ static void test_uri( void )
         },
         
         // end of request
-        { 0, 0, 0, NULL }
+        { 0, 0, 0, "" }
     };
     test_req_t *ptr = req;
     http_t *r = http_alloc(0);
     int rc;
     
-    while( ptr->entity )
+    while( ptr->request )
     {
         rc = http_req_parse( r, ptr->entity, strlen(ptr->entity), 15, INT16_MAX );
         assert( rc == ptr->rc );
@@ -97,9 +97,7 @@ static void test_uri( void )
 
 int main(int argc, const char * argv[])
 {
-    printf("test_uri()\n");
     test_uri();
-    
     return 0;
 }
 
