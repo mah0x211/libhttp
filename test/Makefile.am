@@ -13,5 +13,9 @@ check_PROGRAMS += test_uri
 test_uri_LDFLAGS = -L../src -lhttp
 test_uri_SOURCES = test_uri.c
 
+check_PROGRAMS += test_header
+test_header_LDFLAGS = -L../src -lhttp
+test_header_SOURCES = test_uri.c
+
 
 TESTS = $(check_PROGRAMS)
