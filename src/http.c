@@ -786,7 +786,7 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
 
 http_t *http_alloc( uint8_t maxheader )
 {
-    http_t *r = (http_t*)malloc( sizeof( http_t ) +
+    http_t *r = (http_t*)calloc( 1, sizeof( http_t ) +
                                  sizeof( uintptr_t ) * maxheader * 2 +
                                  sizeof( uint32_t ) * maxheader );
     
