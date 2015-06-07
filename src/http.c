@@ -217,18 +217,6 @@ static const unsigned char HKEYC_TBL[256] = {
     0, 0, 0, 0
 };
 
-/**
- * LWS = [CRLF] 1*( SP | HT )
- *
- * LWSP-char          =  SPACE / HTAB          ; semantics = SPACE
- * linear-white-space =  1*([CRLF] LWSP-char)  ; semantics = SPACE
- *                                             ; CRLF => folding
- */
-
-static const unsigned char LWS[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, HT, LF, 0, 0, CR, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, SP
-};
 
 static const unsigned char SPHT[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, HT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
