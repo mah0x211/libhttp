@@ -116,7 +116,11 @@ typedef struct {
 /**
  * allocate http_t*
  */
+#define http_alloc_size( maxheader ) \
+    (sizeof(http_t)+(sizeof(uintptr_t)*maxheader*2)+sizeof(uint32_t)*maxheader)
+
 http_t *http_alloc( uint8_t maxheader );
+
 
 /**
  * reset data members
