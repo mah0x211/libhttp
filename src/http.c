@@ -372,13 +372,10 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 
 static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = NULL;
+    char *delim = strchr_brk( buf + r->cur, len - r->cur, CR, TEXTC_TBL );
     uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( r, r->nheader );
     uintptr_t tail = 0;
     uintptr_t vlen = 0;
-    
-RECHECK:
-    delim = strchr_brk( buf + r->cur, len - r->cur, CR, TEXTC_TBL );
     
     // EILSEQ: illegal byte sequence == invalid header format
     if( errno ){
@@ -405,14 +402,6 @@ RECHECK:
         // header-length too large
         else if( ( tail - hkey ) > maxhdrlen ){
             return HTTP_EHDRLEN;
-        }
-        // multiple-value
-        else if( SPHT[(unsigned char)delim[2]] )
-        {
-            r->cur = r->head + vlen + 2;
-            if( *delim ){
-                goto RECHECK;
-            }
         }
         else {
             ADD_HVAL( r, r->head, vlen );
