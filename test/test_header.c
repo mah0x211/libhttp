@@ -30,7 +30,7 @@ static void test_header( void )
             "\r\n"
         },
         {
-            HTTP_SUCCESS,
+            HTTP_EHDRFMT,
             HTTP_MGET | HTTP_V10,
             1,
             "GET /foo/bar/baz HTTP/1.0\r\n"
