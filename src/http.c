@@ -178,21 +178,27 @@ static const unsigned char URIC_TBL[256] = {
 #define SP          ' '
 #define HT          '\t'
 #define COLON       ':'
-#define EQ          '='
 
 
 /**
- * RFC 2616
- * http://tools.ietf.org/html/rfc2616#section-2.2
+ * RFC 7230
+ * 3.2.  Header Fields
+ * https://tools.ietf.org/html/rfc7230#section-3.2
  *
- * token          = 1*<any CHAR except CTLs or separators>
- * separators     = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\" | <">
- *                | "/" | "[" | "]" | "?" | "=" | "{" | "}"
- *                | SP  | HT
- */
-
-/**
- * header name token = 1*<alpha | digit | "-" | "_">
+ * field-name     = token
+ *
+ * 3.2.6.  Field Value Components
+ * https://tools.ietf.org/html/rfc7230#section-3.2.6
+ *
+ * token          = 1*tchar
+ * tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+ *                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+ *                / DIGIT / ALPHA
+ *                ; any VCHAR, except delimiters
+ *
+ * VCHAR          = %x21-7E
+ * delimiters     = "(),/:;<=>?@[\]{}
+ * 
  */
 static const unsigned char HKEYC_TBL[256] = {
 //  0  1  2  3  4  5  6  7  8 HT LF 11 12 CR 14 15 16 17 18 19 20 21 22 23 24
@@ -218,58 +224,50 @@ static const unsigned char HKEYC_TBL[256] = {
 };
 
 
+
+/**
+ * RFC 7230
+ * 3.2.  Header Fields
+ * https://tools.ietf.org/html/rfc7230#section-3.2
+ *
+ * field-value    = *( field-content / obs-fold )
+ * field-content  = field-vchar [ 1*( SP / HTAB ) field-vchar ]
+ * field-vchar    = VCHAR / obs-text
+ *
+ * VCHAR          = %x21-7E
+ * obs-text       = %x80-FF
+ * obs-fold       = CRLF 1*( SP / HTAB )
+ *                  ; obsolete line folding
+ *                  ; see https://tools.ietf.org/html/rfc7230#section-3.2.4
+ */
+// 0 = field-content
+// 1 = CR
+// 3 = invalid
+static const unsigned char HVALC_TBL[256] = {
+//                             HT          CR
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+    3, 3, 3, 3, 3, 3, 3,
+//  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  0  1  2  3  4  5  6  7  8  9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//  :  ;  <  =  >  ?  @ 
+    0, 0, 0, 0, 0, 0, 0, 
+//  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//  Z  [  \  ]  ^  _  ` 
+    0, 0, 0, 0, 0, 0, 0,
+//  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  z  {  |  }  ~ 
+    0, 0, 0, 0, 0,
+    3
+};
+
+
 static const unsigned char SPHT[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, HT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0, SP
-};
-
-/**
- * method name characters; GET HEAD POST PUT DELETE OPTIONS TRACE CONNECT
- */
-static const unsigned char METHODC_TBL[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'A', 0, 'C', 'D', 'E', 0, 'G', 
-    'H', 'I', 0, 0, 'L', 0, 'N', 'O', 'P', 0, 'R', 'S', 'T', 'U'
-};
-
-/**
- * version characters; HTTP/X.X
- * X = 0 | 1 | 9
- */
-static const unsigned char VERC_TBL[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '.', '/',
-    '0', '1', 0, 0, 0, 0, 0, 0, 0, '9', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 'H', 0, 0, 0, 0, 0, 0, 0, 'P', 0, 0, 0, 'T'
-};
-
-/**
- * TEXT           = <any OCTET except CTLs,
- *                   but including LWS>
- */
-static const unsigned char TEXTC_TBL[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, HT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 
-    SP, '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', 
-    '/', 
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-    ':', ';', '<', '=', '>', '?', '@', 
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
-    '[', '\\', ']', '^', '_', '`', 
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
-    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
-    '{', '|', '}', '~', 0, 
-    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 
-    143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 
-    158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 
-    173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 
-    188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 
-    203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 
-    218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 
-    233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 
-    248, 249, 250, 251, 252, 253, 254, 255
 };
 
 
@@ -372,54 +370,53 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 
 static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = strchr_brk( buf + r->cur, len - r->cur, CR, TEXTC_TBL );
+    unsigned char *delim = (unsigned char*)buf;
     uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( r, r->nheader );
-    uintptr_t tail = 0;
-    uintptr_t vlen = 0;
+    size_t cur = r->cur;
     
-    // EILSEQ: illegal byte sequence == invalid header format
-    if( errno ){
-        return HTTP_EHDRFMT;
-    }
-    else if( delim )
+    for(; cur < len; cur++ )
     {
-        tail = (uintptr_t)delim - (uintptr_t)buf;
-        // calc value-length
-        vlen = (uint32_t)(tail - r->head);
-        
-        // LF not found
-        if( delim[1] != LF )
+        switch( HVALC_TBL[delim[cur]] )
         {
-            // update cursor if null-terminator
-            if( !delim[1] ){
-                r->cur = r->head + vlen;
-                return HTTP_EAGAIN;
-            }
+            // field-content
+            case 0:
+                continue;
             
-            // invalid format
-            return HTTP_EHDRFMT;
-        }
-        // header-length too large
-        else if( ( tail - hkey ) > maxhdrlen ){
-            return HTTP_EHDRLEN;
-        }
-        else {
-            ADD_HVAL( r, r->head, vlen );
-            // skip CRLF
-            delim += 2;
-            r->nheader++;
-            r->cur = (uintptr_t)delim - (uintptr_t)buf;
-            r->head = r->cur;
-            // set next parser
-            r->phase = HTTP_PHASE_HEADER;
+            // CR
+            case 1:
+                // found LF
+                if( delim[cur+1] == LF )
+                {
+                    if( ( cur - hkey ) > maxhdrlen ){
+                        return HTTP_EHDRLEN;
+                    }
+                    // calc value-length
+                    ADD_HVAL( r, r->head, cur - r->head );
+                    r->nheader++;
+                    // skip CRLF
+                    r->head = r->cur = cur + 2;
+                    // set next parser
+                    r->phase = HTTP_PHASE_HEADER;
+                    
+                    return parse_header( r, buf, len, maxhdrlen );
+                }
+                // null-terminator
+                else if( !delim[cur+1] ){
+                    goto CHECK_AGAIN;
+                }
             
-            return parse_header( r, buf, len, maxhdrlen );
+            // invalid
+            default:
+                return HTTP_EHDRFMT;
         }
     }
+
+CHECK_AGAIN:
     // header-length too large
-    else if( ( len - hkey ) > maxhdrlen ){
+    if( ( len - hkey ) > maxhdrlen ){
         return HTTP_EHDRLEN;
     }
+    r->cur = cur;
     
     return HTTP_EAGAIN;
 }
@@ -449,10 +446,6 @@ RECHECK:
         
         // invalid header format
         return HTTP_EHDRFMT;
-    }
-    // too many headers
-    else if( r->nheader > r->maxheader ){
-        return HTTP_ENHDR;
     }
     
     // lookup seperator
@@ -523,14 +516,9 @@ RECHECK:
 
 static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = strchr_brk( buf + r->cur, len - r->cur, CR, VERC_TBL );
+    char *delim = memchr( buf + r->cur, CR, len - r->cur );
     
-    // EILSEQ: illegal byte sequence == HTTP_BAD_REQUEST
-    if( errno ){
-        return HTTP_EVERSION;
-    }
-    // found
-    else if( delim && delim[1] )
+    if( delim && delim[1] )
     {
         // calc index(same as token-length)
         size_t slen = (uintptr_t)delim - (uintptr_t)buf - r->head;
@@ -661,14 +649,9 @@ CHECK_URI:
 static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
                          uint16_t maxhdrlen )
 {
-    char *delim = strchr_brk( buf + r->cur, len, SP, METHODC_TBL );
+    char *delim = memchr( buf + r->cur, SP, len );
     
-    // EILSEQ: illegal byte sequence == method not implemented
-    if( errno ){
-        return HTTP_EMETHOD;
-    }
-    // found
-    else if( delim )
+    if( delim )
     {
         size_t slen = (uintptr_t)delim - (uintptr_t)buf;
         match64bit_u src = { .bit = 0 };
