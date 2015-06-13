@@ -548,7 +548,7 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         match64bit_u src = { .bit = 0 };
         
         // unsupported version
-        if( delim[1] != LF || len == VER_LEN ){
+        if( delim[1] != LF || slen != VER_LEN ){
             return HTTP_EVERSION;
         }
         
