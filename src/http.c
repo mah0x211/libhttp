@@ -296,7 +296,7 @@ static const unsigned char TEXTC_TBL[256] = {
 #define ADD_HVAL(r,v,l) do{ \
     uint8_t *mem = GET_HVAL_PTR(r, r->nheader); \
     *(uintptr_t*)mem = v; \
-    *(uint16_t*)&mem[sizeof( uintptr_t )] = (uint16_t)l; \
+    *(uint16_t*)&mem[sizeof( uintptr_t )] = (uint16_t)(l); \
 }while(0)
 
 
