@@ -547,7 +547,7 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         }
         
         // check version
-        memcpy( src.str, buf + r->head, slen );
+        src.bit = *((uint64_t*)(buf + r->head));
         // HTTP/1.1
         if( src.bit == V_11.bit ){
             r->protocol |= HTTP_V11;
@@ -580,7 +580,7 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         else {
             return HTTP_EVERSION;
         }
-                
+        
         // skip CRLF
         r->head = r->cur = r->head + slen + 2;
         // set next phase
