@@ -732,9 +732,6 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
 {
     switch( r->phase )
     {
-        case HTTP_PHASE_DONE:
-            return HTTP_SUCCESS;
-        
         case HTTP_PHASE_METHOD:
             return parse_method( r, buf, len, maxurilen, maxhdrlen );
         
@@ -755,6 +752,9 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         
         case HTTP_PHASE_HVAL:
             return parse_hval( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_DONE:
+            return HTTP_SUCCESS;
     }
     
     return HTTP_ERROR;
