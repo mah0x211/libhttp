@@ -210,28 +210,23 @@ static const unsigned char URIC_TBL[256] = {
  * 
  */
 static const unsigned char HKEYC_TBL[256] = {
-//  0  1  2  3  4  5  6  7  8 HT LF 11 12 CR 14 15 16 17 18 19 20 21 22 23 24
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  25 26 27 28 29 30 31 
-    0, 0, 0, 0, 0, 0, 0, 
-//  SP !  "  #  $  %  &  '  (  )  *  +  ,       .  /
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-', 0, 0, 
-//  digit
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+    0, 0, 0, 0, 0, 0, 0, 0,
+//  !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
+    1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0,
+//  0  1  2  3  4  5  6  7  8  9
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //  :  ;  <  =  >  ?  @
-    0, 0, 0, 0, 0, 0, 0, 
-// conversion from alpha-upper to alpha-lower
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
-    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
-//  [  \  ]  ^       `
-    0, 0, 0, 0, '_', 0, 
-//  alpha-lower
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
-    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
-//  {  |  }  ~
-    0, 0, 0, 0
+    2, 0, 0, 0, 0, 0, 0,
+//  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  Z  [  \  ]  ^  _  `
+    1, 0, 0, 0, 1, 1, 1,
+//  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  z  {  |  }  ~
+    1, 0, 1, 0, 1
 };
-
 
 
 /**
@@ -441,89 +436,71 @@ CHECK_AGAIN:
 
 static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = NULL;
-    uintptr_t tail = 0;
-    uintptr_t klen = 0;
-    
+    unsigned char *delim = (unsigned char*)buf;
+    size_t cur = r->cur;
+    uintptr_t klen = r->head;
+
 RECHECK:
-    delim = buf + r->cur;
-    
-    // check header-tail
-    if( delim[0] == CR )
+    if( cur < len )
     {
-        if( !delim[1] ){
-            return HTTP_EAGAIN;
-        }
-        else if( delim[1] == LF ){
-            // calc and save index
-            r->head = r->cur = r->cur + 2;
-            r->phase = HTTP_PHASE_DONE;
-            return HTTP_SUCCESS;
-        }
-        
-        // invalid header format
-        return HTTP_EHDRFMT;
-    }
-    
-    // lookup seperator
-    delim = strchr_brkrep( delim, len - r->cur, COLON, HKEYC_TBL );
-    // EILSEQ: illegal byte sequence == invalid header format
-    if( errno ){
-        return HTTP_EHDRFMT;
-    }
-    // found delimiter
-    else if( delim )
-    {
-        tail = (uintptr_t)delim - (uintptr_t)buf;
-        klen = tail - r->head;
-        // header-length too large
-        if( klen > maxhdrlen ){
-            return HTTP_EHDRLEN;
-        }
-        
-        // skip COLON and SPHT
-        delim++;
-        while( SPHT[(unsigned char)*delim] ){
-            delim++;
-        }
-        
-        // empty value
-        if( *delim == CR )
+        switch( HKEYC_TBL[delim[cur]] )
         {
-            // valid tail format
-            if( delim[1] == LF )
-            {
-                // skip CRLF
-                delim += 2;
-                // set cursor and head position
-                r->head = r->cur = (uintptr_t)delim - (uintptr_t)buf;
-                // recheck field name
-                if( *delim ){
-                    goto RECHECK;
-                }
-            }
-            // invalid header format
-            else if( delim[1] ){
+            // invalid
+            case 0:
                 return HTTP_EHDRFMT;
-            }
-        }
-        else {
-            // set key-index and hkey-length
-            ADD_HKEY( r, r->head, klen );
-            // set cursor
-            r->cur = (uintptr_t)delim - (uintptr_t)buf;
-            r->head = r->cur;
-            // set next parser
-            r->phase = HTTP_PHASE_HVAL;
             
-            return parse_hval( r, buf, len, maxhdrlen );
+            // COLON
+            case 2:
+                // check length
+                klen = cur - klen;
+                if( klen > maxhdrlen ){
+                    return HTTP_EHDRLEN;
+                }
+                
+                // remove OWS
+                while( ++cur < len )
+                {
+                    // skip SPHT
+                    if( SPHT[delim[cur]] ){
+                        continue;
+                    }
+                    // empty field
+                    else if( delim[cur] == CR )
+                    {
+                        if( !delim[cur+1] ){
+                            r->cur = cur;
+                            r->phase = HTTP_PHASE_HEADER;
+                            return EAGAIN;
+                        }
+                        else if( delim[cur+1] == LF ){
+                            r->head = klen = cur += 2;
+                            goto RECHECK;
+                        }
+                    }
+                    break;
+                }
+                
+                // set key-index and hkey-length
+                ADD_HKEY( r, r->head, klen );
+                // set cursor
+                r->head = r->cur = cur;
+                // set next parser
+                r->phase = HTTP_PHASE_HVAL;
+                
+                if( cur >= len ){
+                    return HTTP_EAGAIN;
+                }
+                
+                return parse_hval( r, buf, len, maxhdrlen );
         }
+        cur++;
+        goto RECHECK;
     }
     // header-length too large
-    else if( len - r->head > ( maxhdrlen - 1 ) ){
+    else if( ( len - r->head ) > maxhdrlen ){
         return HTTP_EHDRLEN;
     }
-        
+    
     // update parse cursor
     r->cur = len;
     
