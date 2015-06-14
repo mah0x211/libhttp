@@ -185,6 +185,15 @@ static const unsigned char URIC_TBL[256] = {
  * 3.2.  Header Fields
  * https://tools.ietf.org/html/rfc7230#section-3.2
  *
+ * OWS            = *( SP / HTAB )
+ *                   ; optional whitespace
+ * RWS            = 1*( SP / HTAB )
+ *                  ; required whitespace
+ * BWS            = OWS
+ *                  ; "bad" whitespace
+ *
+ * header-field   = field-name ":" OWS field-value OWS
+ *
  * field-name     = token
  *
  * 3.2.6.  Field Value Components
@@ -387,11 +396,19 @@ static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
                 // found LF
                 if( delim[cur+1] == LF )
                 {
-                    if( ( cur - hkey ) > maxhdrlen ){
+                    size_t tail = cur;
+                    
+                    // remove OWS
+                    while( SPHT[delim[tail-1]] ){
+                        tail--;
+                    }
+                    // check length
+                    if( ( tail - hkey ) > maxhdrlen ){
                         return HTTP_EHDRLEN;
                     }
+                    
                     // calc value-length
-                    ADD_HVAL( r, r->head, cur - r->head );
+                    ADD_HVAL( r, r->head, tail - r->head );
                     r->nheader++;
                     // skip CRLF
                     r->head = r->cur = cur + 2;
@@ -544,7 +561,7 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             }
             r->protocol |= HTTP_V10;
         }
-        // not HTTP/0.9
+        // HTTP/0.9
         else if( src.bit == V_09.bit )
         {
             // illegal request if method is not the GET method
