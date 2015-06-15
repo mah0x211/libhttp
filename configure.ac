@@ -19,10 +19,12 @@ AC_CHECK_HEADERS([stdlib.h stddef.h stdint.h string.h errno.h])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
+AC_CHECK_TYPES([uintptr_t, uint64_t, uint32_t, uint16_t, uint8_t, size_t])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ \
     malloc \
+    calloc \
     free \
     memcpy \
 ])
