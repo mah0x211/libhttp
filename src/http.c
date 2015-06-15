@@ -212,20 +212,24 @@ static const unsigned char URIC_TBL[256] = {
 static const unsigned char HKEYC_TBL[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-//  !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
-    1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0,
-//  0  1  2  3  4  5  6  7  8  9
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//   !    "    #    $    %    &    '    (  )   *    +   ,   -    .   /
+    '!', '"', '#', '$', '%', '&', '\'', 0, 0, '*', '+', 0, '-', '.', 0,
+//   0    1    2    3    4    5    6    7    8    9
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 //  :  ;  <  =  >  ?  @
     2, 0, 0, 0, 0, 0, 0,
-//  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//  Z  [  \  ]  ^  _  `
-    1, 0, 0, 0, 1, 1, 1,
-//  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-//  z  {  |  }  ~
-    1, 0, 1, 0, 1
+//   A    B    C    D    E    F    G    H    I    J    K    L    M    N    O
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+//   P   Q     R    S    T    U    V    W    X    Y    Z
+    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+//  [  \  ]   ^    _    `
+    0, 0, 0, '^', '_', '`',
+//   a    b    c    d    e    f    g    h    i    j    k    l    m    n    o
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+//   p    q    r    s    t    u    v    w    x    y    z
+    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+//  {   |   }   ~
+    0, '|', 0, '~'
 };
 
 
@@ -441,11 +445,13 @@ static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
     unsigned char *delim = (unsigned char*)buf;
     size_t cur = r->cur;
     uintptr_t klen = r->head;
-
+    unsigned char c = 0;
+    
 RECHECK:
     if( cur < len )
     {
-        switch( HKEYC_TBL[delim[cur]] )
+        c = HKEYC_TBL[delim[cur]];
+        switch( c )
         {
             // invalid
             case 0:
@@ -495,6 +501,7 @@ RECHECK:
                 
                 return parse_hval( r, buf, len, maxhdrlen );
         }
+        delim[cur] = c;
         cur++;
         goto RECHECK;
     }
