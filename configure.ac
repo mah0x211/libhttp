@@ -42,6 +42,7 @@ AS_IF([test "$ENABLE_DEBUG" != "no"],
 )
 
 AC_CONFIG_FILES([Makefile \
-                src/Makefile \
-                test/Makefile])
+                 libhttp.pc \
+                 src/Makefile \
+                 test/Makefile])
 AC_OUTPUT
