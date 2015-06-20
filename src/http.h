@@ -123,9 +123,23 @@ http_t *http_alloc( uint8_t maxheader );
 
 
 /**
- * reset data members
+ * initialize data members
  */
-void http_reset( http_t *r );
+#define http_init_ex(r,maxhdr) do{ \
+    *(r) = (http_t){ \
+        .cur = 0, \
+        .head = 0, \
+        .phase = 0, \
+        .protocol = 0, \
+        .urilen = 0, \
+        .uri = 0, \
+        .nheader = 0, \
+        .maxheader = (maxhdr) \
+    }; \
+}while(0)
+
+#define http_init(r)    http_init_ex(r,r->maxheader)
+
 
 /**
  * deallocate http_t*

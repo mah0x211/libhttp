@@ -759,21 +759,6 @@ http_t *http_alloc( uint8_t maxheader )
 }
 
 
-void http_reset( http_t *r )
-{
-    *r = (http_t){
-        .cur = 0,
-        .head = 0,
-        .phase = 0,
-        .protocol = 0,
-        .urilen = 0,
-        .uri = 0,
-        .nheader = 0,
-        .maxheader = r->maxheader
-    };
-}
-
-
 void http_free( http_t *r )
 {
     free( (void*)r );
