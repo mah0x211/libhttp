@@ -143,7 +143,7 @@ http_t *http_alloc( uint8_t maxheader );
 /**
  * initialize data members
  */
-#define http_init_ex(r,maxhdr) do{ \
+#define http_init(r) do{ \
     *(r) = (http_t){ \
         .cur = 0, \
         .head = 0, \
@@ -152,11 +152,9 @@ http_t *http_alloc( uint8_t maxheader );
         .urilen = 0, \
         .uri = 0, \
         .nheader = 0, \
-        .maxheader = (maxhdr) \
+        .maxheader = (r)->maxheader \
     }; \
 }while(0)
-
-#define http_init(r)    http_init_ex(r,r->maxheader)
 
 
 /**
