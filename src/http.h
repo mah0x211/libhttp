@@ -102,101 +102,101 @@ typedef struct {
      *
      * status X 6 bit
      * ------+-------------------------------------
-     * 000001| 100 Continue
-     * 000010| 101 Switching Protocols
-     * 000011| 102 Processing
+     * 000000| 100 Continue
+     * 000001| 101 Switching Protocols
+     * 000010| 102 Processing
      * ------+-------------------------------------
      * 103-199 unassigned
      *
      * ------+-------------------------------------
-     * 000100| 200 OK
-     * 000101| 201 Created
-     * 000110| 202 Accepted
-     * 000111| 203 Non-Authoriative Information
-     * 001000| 204 No Content
-     * 001001| 205 Reset Content
-     * 001010| 206 Partial Content
-     * 001011| 207 Multi-Status
-     * 001100| 208 Already Reported
+     * 000011| 200 OK
+     * 000100| 201 Created
+     * 000101| 202 Accepted
+     * 000110| 203 Non-Authoriative Information
+     * 000111| 204 No Content
+     * 001000| 205 Reset Content
+     * 001001| 206 Partial Content
+     * 001010| 207 Multi-Status
+     * 001011| 208 Already Reported
      * ------+-------------------------------------
      * 209-225 unassigned
      * ------+-------------------------------------
-     * 001101| 226 IM Used
+     * 001100| 226 IM Used
      * ------+-------------------------------------
      * 227-299 unassigned
      *
      * ------+-------------------------------------
-     * 001110| 300 Multiple Choices
-     * 001111| 301 Moved Permanently
-     * 010001| 302 Found
-     * 010010| 303 See Other
-     * 010011| 304 Not Modified
-     * 010100| 305 Use Proxy
+     * 001101| 300 Multiple Choices
+     * 001110| 301 Moved Permanently
+     * 001111| 302 Found
+     * 010000| 303 See Other
+     * 010001| 304 Not Modified
+     * 010010| 305 Use Proxy
      * ------+-------------------------------------
      * 306 unused
      * ------+-------------------------------------
-     * 010101| 307 Temporary Redirect
-     * 010110| 308 Permanent Redirect
+     * 010011| 307 Temporary Redirect
+     * 010100| 308 Permanent Redirect
      * ------+-------------------------------------
      * 309-399 unassigned
      *
      * ------+-------------------------------------
-     * 010111| 400 Bad Request
-     * 011001| 401 Unauthorized
-     * 011010| 402 Payment Required
-     * 011011| 403 Forbidden
-     * 011100| 404 Not Found
-     * 011101| 405 Method Not Allowed
-     * 011110| 406 Not Acceptable
-     * 011111| 407 Proxy Authentication Required
-     * 100000| 408 Request Timeout
-     * 100001| 409 Conflict
-     * 100010| 410 Gone
-     * 100011| 411 Length Required
-     * 100100| 412 Precondition Failed
-     * 100101| 413 Payload Too Large
-     * 100110| 414 URI Too Large
-     * 100111| 415 Unsupported Media Type
-     * 101000| 416 Range Not Satisfiable
-     * 101001| 417 Expectation Failed
+     * 010101| 400 Bad Request
+     * 010110| 401 Unauthorized
+     * 010111| 402 Payment Required
+     * 011000| 403 Forbidden
+     * 011001| 404 Not Found
+     * 011010| 405 Method Not Allowed
+     * 011011| 406 Not Acceptable
+     * 011100| 407 Proxy Authentication Required
+     * 011101| 408 Request Timeout
+     * 011110| 409 Conflict
+     * 011111| 410 Gone
+     * 100000| 411 Length Required
+     * 100001| 412 Precondition Failed
+     * 100010| 413 Payload Too Large
+     * 100011| 414 URI Too Large
+     * 100100| 415 Unsupported Media Type
+     * 100101| 416 Range Not Satisfiable
+     * 100110| 417 Expectation Failed
      * ------+-------------------------------------
      * 418-420 unassigned
      * ------+-------------------------------------
-     * 101010| 421 Misdirected Request
-     * 101011| 422 Unprocessable Entity
-     * 101100| 423 Locked
-     * 101101| 424 Failed Dependency
+     * 100111| 421 Misdirected Request
+     * 101000| 422 Unprocessable Entity
+     * 101001| 423 Locked
+     * 101010| 424 Failed Dependency
      * ------+-------------------------------------
      * 425 unassigned
      * ------+-------------------------------------
-     * 101110| 426 Upgrade Required
+     * 101011| 426 Upgrade Required
      * ------+-------------------------------------
      * 427 unassigned
      * ------+-------------------------------------
-     * 101111| 428 Precondition Required
-     * 110000| 429 Too Many Requests
+     * 101100| 428 Precondition Required
+     * 101101| 429 Too Many Requests
      * ------+-------------------------------------
      * 430 unassigned
      * ------+-------------------------------------
-     * 110001| 431 Request Header Fields Too Large
+     * 101110| 431 Request Header Fields Too Large
      * ------+-------------------------------------
      * 432-499 unassigned
      *
      * ------+-------------------------------------
-     * 110010| 500 Internal Server Error
-     * 110011| 501 Not Implemented
-     * 110100| 502 Bad Gateway
-     * 110101| 503 Service Unavailable
-     * 110110| 504 Gateway Timeout
-     * 110111| 505 HTTP Version Not Supported
-     * 111000| 506 Variant Also Negotiates
-     * 111001| 507 Insufficient Storage
-     * 111010| 508 Loop Detected
+     * 101111| 500 Internal Server Error
+     * 110000| 501 Not Implemented
+     * 110001| 502 Bad Gateway
+     * 110010| 503 Service Unavailable
+     * 110011| 504 Gateway Timeout
+     * 110100| 505 HTTP Version Not Supported
+     * 110101| 506 Variant Also Negotiates
+     * 110110| 507 Insufficient Storage
+     * 110111| 508 Loop Detected
      * ------+-------------------------------------
      * 509 unassigned
      * ------+-------------------------------------
-     * 111011| 510 Not Extended
-     * 111100| 511 Network Authentication Required
+     * 111000| 510 Not Extended
+     * 111001| 511 Network Authentication Required
      * ------+-------------------------------------
      * 512-599 unassigned
      *
@@ -239,6 +239,14 @@ typedef struct {
 #define HTTP_MCONNECT   0x8
 
 #define http_req_method(p)  ((p)->protocol & 0x3F)
+
+/**
+ * HTTP status code
+ */
+enum {
+    HTTP_CONTINUE
+};
+
 
 /**
  * per HTTP header
