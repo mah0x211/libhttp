@@ -48,30 +48,158 @@ typedef struct {
     uintptr_t head;
 
     /**
-     * protocol 16 bit
-     * ver|other
-     * ---+-------------
-     * XXX|YYYYYYYYYYYYY
-     * ---+-------------
+     * protocol 8 bit
      *
-     * version 0 bit
-     * ---+----------
-     * 000| HTTP/0.9
-     * 001| HTTP/1.0
-     * 010| HTTP/1.1
-     * ---+----------
+     * RESPONSE   REQUEST
+     * ---+------+---+-------
+     * ver|status|ver|method
+     * ---+------+----------
+     *  WW|XXXXXX| YY|ZZZZZZ
+     * ---+------+---+-------
      *
-     * method: 4 bit
-     * -----+---------
-     *  0001| GET
-     *  0010| HEAD
-     *  0011| POST
-     *  0100| PUT
-     *  0101| DELETE
-     *  0110| OPTIONS
-     *  0111| TRACE
-     *  1000| CONNECT
-     * -----+---------
+     * REQUEST
+     * ---+------
+     * ver|method
+     * ---+------
+     *  YY|ZZZZZZ
+     * ---+------
+     *
+     * version X 2 bit
+     * --+----------
+     * 00| HTTP/0.9
+     * 01| HTTP/1.0
+     * 10| HTTP/1.1
+     * --+----------
+     *
+     * method Y 6 bit
+     * ------+---------
+     * 000001| GET
+     * 000010| HEAD
+     * 000011| POST
+     * 000100| PUT
+     * 000101| DELETE
+     * 000110| OPTIONS
+     * 000111| TRACE
+     * 001000| CONNECT
+     * ------+---------
+     *
+     * RESPONSE 8bit
+     * ---+------
+     * ver|method
+     * ---+------
+     *  WW|XXXXXX
+     * ---+------
+     *
+     * version W 2 bit
+     * --+----------
+     * 00| HTTP/0.9
+     * 01| HTTP/1.0
+     * 10| HTTP/1.1
+     * --+----------
+     *
+     * Hypertext Transfer Protocol (HTTP) Status Code Registry
+     * http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+     *
+     * status X 6 bit
+     * ------+-------------------------------------
+     * 000001| 100 Continue
+     * 000010| 101 Switching Protocols
+     * 000011| 102 Processing
+     * ------+-------------------------------------
+     * 103-199 unassigned
+     *
+     * ------+-------------------------------------
+     * 000100| 200 OK
+     * 000101| 201 Created
+     * 000110| 202 Accepted
+     * 000111| 203 Non-Authoriative Information
+     * 001000| 204 No Content
+     * 001001| 205 Reset Content
+     * 001010| 206 Partial Content
+     * 001011| 207 Multi-Status
+     * 001100| 208 Already Reported
+     * ------+-------------------------------------
+     * 209-225 unassigned
+     * ------+-------------------------------------
+     * 001101| 226 IM Used
+     * ------+-------------------------------------
+     * 227-299 unassigned
+     *
+     * ------+-------------------------------------
+     * 001110| 300 Multiple Choices
+     * 001111| 301 Moved Permanently
+     * 010001| 302 Found
+     * 010010| 303 See Other
+     * 010011| 304 Not Modified
+     * 010100| 305 Use Proxy
+     * ------+-------------------------------------
+     * 306 unused
+     * ------+-------------------------------------
+     * 010101| 307 Temporary Redirect
+     * 010110| 308 Permanent Redirect
+     * ------+-------------------------------------
+     * 309-399 unassigned
+     *
+     * ------+-------------------------------------
+     * 010111| 400 Bad Request
+     * 011001| 401 Unauthorized
+     * 011010| 402 Payment Required
+     * 011011| 403 Forbidden
+     * 011100| 404 Not Found
+     * 011101| 405 Method Not Allowed
+     * 011110| 406 Not Acceptable
+     * 011111| 407 Proxy Authentication Required
+     * 100000| 408 Request Timeout
+     * 100001| 409 Conflict
+     * 100010| 410 Gone
+     * 100011| 411 Length Required
+     * 100100| 412 Precondition Failed
+     * 100101| 413 Payload Too Large
+     * 100110| 414 URI Too Large
+     * 100111| 415 Unsupported Media Type
+     * 101000| 416 Range Not Satisfiable
+     * 101001| 417 Expectation Failed
+     * ------+-------------------------------------
+     * 418-420 unassigned
+     * ------+-------------------------------------
+     * 101010| 421 Misdirected Request
+     * 101011| 422 Unprocessable Entity
+     * 101100| 423 Locked
+     * 101101| 424 Failed Dependency
+     * ------+-------------------------------------
+     * 425 unassigned
+     * ------+-------------------------------------
+     * 101110| 426 Upgrade Required
+     * ------+-------------------------------------
+     * 427 unassigned
+     * ------+-------------------------------------
+     * 101111| 428 Precondition Required
+     * 110000| 429 Too Many Requests
+     * ------+-------------------------------------
+     * 430 unassigned
+     * ------+-------------------------------------
+     * 110001| 431 Request Header Fields Too Large
+     * ------+-------------------------------------
+     * 432-499 unassigned
+     *
+     * ------+-------------------------------------
+     * 110010| 500 Internal Server Error
+     * 110011| 501 Not Implemented
+     * 110100| 502 Bad Gateway
+     * 110101| 503 Service Unavailable
+     * 110110| 504 Gateway Timeout
+     * 110111| 505 HTTP Version Not Supported
+     * 111000| 506 Variant Also Negotiates
+     * 111001| 507 Insufficient Storage
+     * 111010| 508 Loop Detected
+     * ------+-------------------------------------
+     * 509 unassigned
+     * ------+-------------------------------------
+     * 111011| 510 Not Extended
+     * 111100| 511 Network Authentication Required
+     * ------+-------------------------------------
+     * 512-599 unassigned
+     *
      */
     uint16_t protocol;
     
@@ -92,10 +220,10 @@ typedef struct {
  * HTTP version code
  */
 #define HTTP_V09    0x0
-#define HTTP_V10    0x2000
-#define HTTP_V11    0x4000
+#define HTTP_V10    0x40
+#define HTTP_V11    0x80
 
-#define http_req_ver(p) ((p)->protocol & 0xE000)
+#define http_req_ver(p) ((p)->protocol & 0xC0)
 
 
 /**
@@ -110,7 +238,7 @@ typedef struct {
 #define HTTP_MTRACE     0x7
 #define HTTP_MCONNECT   0x8
 
-#define http_req_method(p)  ((p)->protocol & 0x000F)
+#define http_req_method(p)  ((p)->protocol & 0x3F)
 
 /**
  * per HTTP header
