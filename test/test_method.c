@@ -179,7 +179,7 @@ static void test_method( void )
             assert( r->protocol == ptr->request );
         }
         ptr++;
-        http_reset( r );
+        http_init( r );
     }
     http_free( r );
 }
