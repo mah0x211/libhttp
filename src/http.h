@@ -112,12 +112,30 @@ typedef struct {
 
 #define http_req_method(p)  ((p)->protocol & 0x000F)
 
+/**
+ * per HTTP header
+ *
+ * (uintptr_t + uint16_t) * 2
+ * uintptr_t key
+ * uint16_t klen
+ * uintptr_t val
+ * uint16_t vlen
+ */
+#define HTTP_HEADER_SIZE    ((sizeof(uintptr_t)+sizeof(uint16_t))<<1)
+
+/**
+ * get the header key-value pair at specified index
+ */
+int http_getheader_at( http_t *r, uintptr_t *key, uint16_t *klen,
+                       uintptr_t *val, uint16_t *vlen, uint8_t at );
+
+
 
 /**
  * allocate http_t*
  */
 #define http_alloc_size( maxheader ) \
-    (sizeof(http_t)+(sizeof(uintptr_t)*maxheader*2)+sizeof(uint32_t)*maxheader)
+    (sizeof(http_t)+(HTTP_HEADER_SIZE*maxheader))
 
 http_t *http_alloc( uint8_t maxheader );
 
@@ -178,12 +196,6 @@ void http_free( http_t *r );
  */
 int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen );
-
-/**
- * get the header key-value pair at specified index
- */
-int http_getheader_at( http_t *r, uintptr_t *key, uint16_t *klen,
-                       uintptr_t *val, uint16_t *vlen, uint8_t at );
 
 
 #endif
