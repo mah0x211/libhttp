@@ -30,6 +30,69 @@
 #include <stdint.h>
 
 
+enum {
+    HTTP_PHASE_METHOD = 0,
+    HTTP_PHASE_VERSION_RES = 0,
+    HTTP_PHASE_URI,
+    HTTP_PHASE_VERSION,
+    HTTP_PHASE_STATUS,
+    HTTP_PHASE_REASON,
+    HTTP_PHASE_EOL,
+    HTTP_PHASE_HEADER,
+    HTTP_PHASE_HKEY,
+    HTTP_PHASE_HVAL,
+    HTTP_PHASE_DONE
+};
+
+
+typedef struct {
+    /* read cursor */
+    uintptr_t cur;
+    /* token head position */
+    uintptr_t head;
+    /* parse phase */
+    uint8_t phase;
+    /* uri or message */
+    uint8_t msg;
+    uint16_t msglen;
+    /* http version 0.9/1.0/1.1 */
+    /* method or status */
+    uint16_t protocol;
+    /* header */
+    uint8_t nheader;
+    uint8_t maxheader;
+} http_t;
+
+
+/**
+ * HTTP version code
+ */
+enum {
+    HTTP_V09 = 0,
+    HTTP_V10 = 0x1000,
+    HTTP_V11 = 0x2000
+};
+
+#define http_version(p) ((p)->protocol & 0xF000)
+
+
+/**
+ * HTTP method code
+ */
+enum {
+    HTTP_MGET = 1,
+    HTTP_MHEAD,
+    HTTP_MPOST,
+    HTTP_MPUT,
+    HTTP_MDELETE,
+    HTTP_MOPTIONS,
+    HTTP_MTRACE,
+    HTTP_MCONNECT
+};
+
+#define http_method(p)  ((p)->protocol & 0xFFF)
+
+
 /**
  * HTTP status code
  * http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
@@ -111,71 +174,7 @@ enum {
     HTTP_NETWORK_AUTHENTICATION_REQUIRED
 };
 
-
-enum {
-    HTTP_PHASE_METHOD = 0,
-    HTTP_PHASE_VERSION_RES = 0,
-    HTTP_PHASE_URI,
-    HTTP_PHASE_VERSION,
-    HTTP_PHASE_STATUS,
-    HTTP_PHASE_REASON,
-    HTTP_PHASE_EOL,
-    HTTP_PHASE_HEADER,
-    HTTP_PHASE_HKEY,
-    HTTP_PHASE_HVAL,
-    HTTP_PHASE_DONE
-};
-
-
-typedef struct {
-    /* read cursor */
-    uintptr_t cur;
-    /* token head position */
-    uintptr_t head;
-    /* parse phase */
-    uint8_t phase;
-    /* http version 0.9/1.0/1.1 */
-    uint8_t version;
-    /* method or status */
-    uint8_t code;
-    /* uri or message */
-    uint8_t msg;
-    uint16_t msglen;
-    /* header */
-    uint8_t nheader;
-    uint8_t maxheader;
-} http_t;
-
-
-/**
- * HTTP version code
- */
-enum {
-    HTTP_V09 = 0,
-    HTTP_V10,
-    HTTP_V11
-};
-
-#define http_version(p) ((p)->version)
-
-
-/**
- * HTTP method code
- */
-enum {
-    HTTP_MGET = 1,
-    HTTP_MHEAD,
-    HTTP_MPOST,
-    HTTP_MPUT,
-    HTTP_MDELETE,
-    HTTP_MOPTIONS,
-    HTTP_MTRACE,
-    HTTP_MCONNECT
-};
-
-#define http_method(p)  ((p)->code)
-
-#define http_status(p)  ((p)->code)
+#define http_status(p)  ((p)->protocol & 0xFFF)
 
 
 /**
@@ -214,8 +213,7 @@ http_t *http_alloc( uint8_t maxheader );
         .cur = 0, \
         .head = 0, \
         .phase = 0, \
-        .version = 0, \
-        .code = 0, \
+        .protocol = 0, \
         .msg = 0, \
         .msglen = 0, \
         .nheader = 0, \

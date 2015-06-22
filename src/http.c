@@ -578,22 +578,22 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             src.bit = *((uint64_t*)(buf + r->head));
             // HTTP/1.1
             if( src.bit == V_11.bit ){
-                r->version = HTTP_V11;
+                r->protocol |= HTTP_V11;
             }
             // HTTP/1.0
             else if( src.bit == V_10.bit )
             {
                 // illegal request if method is not the GET, HEAD or POST method
-                if( r->code > HTTP_MPOST ){
+                if( r->protocol > HTTP_MPOST ){
                     return HTTP_EMETHOD;
                 }
-                r->version = HTTP_V10;
+                r->protocol |= HTTP_V10;
             }
             // HTTP/0.9
             else if( src.bit == V_09.bit )
             {
                 // illegal request if method is not the GET method
-                if( r->code != HTTP_MGET ){
+                if( r->protocol != HTTP_MGET ){
                     return HTTP_EMETHOD;
                 }
                 // skip CRLF
@@ -650,7 +650,7 @@ static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
             // reset errno
             errno = 0;
             // HTTP/0.9 supports a GET method only
-            if( r->code != HTTP_MGET ){
+            if( r->protocol != HTTP_MGET ){
                 return HTTP_EMETHOD;
             }
             
@@ -715,28 +715,28 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         memcpy( src.str, buf, slen );
         // check method
         if( src.bit == M_GET.bit ){
-            r->code = HTTP_MGET;
+            r->protocol = HTTP_MGET;
         }
         else if( src.bit == M_POST.bit ){
-            r->code = HTTP_MPOST;
+            r->protocol = HTTP_MPOST;
         }
         else if( src.bit == M_PUT.bit ){
-            r->code = HTTP_MPUT;
+            r->protocol = HTTP_MPUT;
         }
         else if( src.bit == M_DELETE.bit ){
-            r->code = HTTP_MDELETE;
+            r->protocol = HTTP_MDELETE;
         }
         else if( src.bit == M_HEAD.bit ){
-            r->code = HTTP_MHEAD;
+            r->protocol = HTTP_MHEAD;
         }
         else if( src.bit == M_OPTIONS.bit ){
-            r->code = HTTP_MOPTIONS;
+            r->protocol = HTTP_MOPTIONS;
         }
         else if( src.bit == M_TRACE.bit ){
-            r->code = HTTP_MTRACE;
+            r->protocol = HTTP_MTRACE;
         }
         else if( src.bit == M_CONNECT.bit ){
-            r->code = HTTP_MCONNECT;
+            r->protocol = HTTP_MCONNECT;
         }
         // method not implemented
         else {
@@ -869,9 +869,9 @@ static int parse_status( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         }
         
         // set status
-        r->code = ( head[0] - 0x30 ) * 100 +
-                  ( head[1] - 0x30 ) * 10 +
-                  ( head[2] - 0x30 );
+        r->protocol |= ( head[0] - 0x30 ) * 100 +
+                       ( head[1] - 0x30 ) * 10 +
+                       ( head[2] - 0x30 );
         // update parse cursor, token-head and url head
         r->head = r->cur = r->head + slen + 1;
         // set next phase
@@ -909,15 +909,15 @@ static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             // check version
             // HTTP/1.1
             if( src.bit == V_11.bit ){
-                r->version = HTTP_V11;
+                r->protocol = HTTP_V11;
             }
             // HTTP/1.0
             else if( src.bit == V_10.bit ){
-                r->version = HTTP_V10;
+                r->protocol = HTTP_V10;
             }
             // HTTP/0.9
             else if( src.bit == V_09.bit ){
-                r->version = HTTP_V09;
+                r->protocol = HTTP_V09;
             }
             // unsupported version
             else {
@@ -933,14 +933,14 @@ static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         }
         
         // HTTP/0.9 simple-response
-        r->version = HTTP_V09;
+        r->protocol = HTTP_V09;
         r->cur = 0;
         
         return HTTP_SUCCESS;
     }
     // HTTP/0.9 simple-response
     else if( len > VER_LEN ){
-        r->version = HTTP_V09;
+        r->protocol = HTTP_V09;
         r->cur = 0;
         return HTTP_SUCCESS;
     }
