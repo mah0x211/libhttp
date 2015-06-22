@@ -796,6 +796,195 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
 }
 
 
+static int parse_reason( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+{
+    unsigned char *delim = (unsigned char*)buf;
+    size_t cur = r->cur;
+    
+    for(; cur < len; cur++ )
+    {
+        switch( PHRASE_TBL[delim[cur]] )
+        {
+            // reason-phrase
+            case 0:
+                continue;
+            
+            // CR
+            case 1:
+                // found LF
+                if( delim[cur+1] == LF )
+                {
+                    // check length
+                    if( ( cur - r->head ) > UINT16_MAX ){
+                        return HTTP_ELINEFMT;
+                    }
+                    
+                    // calc reason-length
+                    r->msg = (uint8_t)r->head;
+                    r->msglen = (uint16_t)(cur - r->head);
+                    // skip CRLF
+                    r->head = r->cur = cur + 2;
+                    // set next parser
+                    r->phase = HTTP_PHASE_HEADER;
+                    
+                    return parse_header( r, buf, len, maxhdrlen );
+                }
+                // null-terminator
+                else if( !delim[cur+1] ){
+                    goto CHECK_AGAIN;
+                }
+            
+            // invalid
+            default:
+                return HTTP_EHDRFMT;
+        }
+    }
+
+CHECK_AGAIN:
+    // header-length too large
+    if( ( len - r->head ) > UINT16_MAX ){
+        return HTTP_EHDRLEN;
+    }
+    r->cur = cur;
+    
+    return HTTP_EAGAIN;
+}
+
+
+static int parse_status( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+{
+    char *delim = memchr( buf + r->cur, SP, len - r->cur );
+    
+    if( delim )
+    {
+        unsigned char *head = (unsigned char*)(buf + r->head);
+        size_t slen = (uintptr_t)delim - (uintptr_t)head;
+        
+        // invalid status code
+        if( slen != STATUS_LEN ||
+            head[0] < '1' || head[0] > '5' ||
+            head[1] < '0' || head[1] > '9' ||
+            head[2] < '0' || head[2] > '9' ){
+            return HTTP_ESTATUS;
+        }
+        
+        // set status
+        r->code = ( head[0] - 0x30 ) * 100 +
+                  ( head[1] - 0x30 ) * 10 +
+                  ( head[2] - 0x30 );
+        // update parse cursor, token-head and url head
+        r->head = r->cur = r->head + slen + 1;
+        // set next phase
+        r->phase = HTTP_PHASE_REASON;
+        
+        return parse_reason( r, buf, len, maxhdrlen );
+    }
+    // method not implemented
+    else if( ( len - r->cur ) > STATUS_LEN ){
+        return HTTP_ESTATUS;
+    }
+    
+    // update cursor
+    r->cur = len;
+    
+    return HTTP_EAGAIN;
+}
+
+
+static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+{
+    char *delim = memchr( buf + r->cur, SP, len - r->cur );
+    
+    if( delim )
+    {
+        // calc index(same as token-length)
+        size_t slen = (uintptr_t)delim - (uintptr_t)buf;
+        
+        if( slen == VER_LEN )
+        {
+            match64bit_u src = {
+                .bit = *((uint64_t*)(buf + r->head))
+            };
+            
+            // check version
+            // HTTP/1.1
+            if( src.bit == V_11.bit ){
+                r->version = HTTP_V11;
+            }
+            // HTTP/1.0
+            else if( src.bit == V_10.bit ){
+                r->version = HTTP_V10;
+            }
+            // HTTP/0.9
+            else if( src.bit == V_09.bit ){
+                r->version = HTTP_V09;
+            }
+            // unsupported version
+            else {
+                return HTTP_EVERSION;
+            }
+            
+            // skip SP
+            r->head = r->cur = VER_LEN + 1;
+            // set next phase
+            r->phase = HTTP_PHASE_STATUS;
+            
+            return parse_status( r, buf, len, maxhdrlen );
+        }
+        
+        // HTTP/0.9 simple-response
+        r->version = HTTP_V09;
+        r->cur = 0;
+        
+        return HTTP_SUCCESS;
+    }
+    // HTTP/0.9 simple-response
+    else if( len > VER_LEN ){
+        r->version = HTTP_V09;
+        r->cur = 0;
+        return HTTP_SUCCESS;
+    }
+    
+    // update parse cursor
+    r->cur = len;
+    
+    return HTTP_EAGAIN;
+}
+
+
+int http_res_parse( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+{
+    switch( r->phase )
+    {
+        case HTTP_PHASE_VERSION_RES:
+            return parse_ver_res( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_STATUS:
+            return parse_status( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_REASON:
+            return parse_reason( r, buf, len, maxhdrlen );
+
+        case HTTP_PHASE_EOL:
+            return parse_eol( r, buf );
+        
+        case HTTP_PHASE_HEADER:
+            return parse_header( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_HKEY:
+            return parse_hkey( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_HVAL:
+            return parse_hval( r, buf, len, maxhdrlen );
+        
+        case HTTP_PHASE_DONE:
+            return HTTP_SUCCESS;
+    }
+    
+    return HTTP_ERROR;
+}
+
+
 http_t *http_alloc( uint8_t maxheader )
 {
     http_t *r = (http_t*)calloc( 1, http_alloc_size( maxheader ) );

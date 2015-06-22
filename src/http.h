@@ -266,6 +266,11 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen );
 
 
+/**
+ * parsing the http 0.9/1.0/1.1 response
+ */
+int http_res_parse( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
+
 #endif
 
 
