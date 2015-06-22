@@ -7,8 +7,7 @@ static void test_header( void )
         // HTTP/0.9
         {
             HTTP_EBADURI,
-            HTTP_MGET,
-            HTTP_V09,
+            HTTP_MGET | HTTP_V09,
             0,
             "GET /foo/bar/baz\r\n"
             "Host: example.com\r\n"
@@ -16,8 +15,7 @@ static void test_header( void )
         },
         {
             HTTP_ELINEFMT,
-            HTTP_MGET,
-            HTTP_V09,
+            HTTP_MGET | HTTP_V09,
             0,
             "GET /foo/bar/baz HTTP/0.9\r\n"
             "Host: example.com\r\n"
@@ -25,8 +23,7 @@ static void test_header( void )
         },
         {
             HTTP_SUCCESS,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             1,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host: example.com\r\n"
@@ -34,8 +31,7 @@ static void test_header( void )
         },
         {
             HTTP_EHDRFMT,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             1,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host: 1.example.com\r\n"
@@ -45,8 +41,7 @@ static void test_header( void )
         },
         {
             HTTP_SUCCESS,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             2,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host1: example.com\r\n"
@@ -55,8 +50,7 @@ static void test_header( void )
         },
         {
             HTTP_SUCCESS,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             3,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host1: example.com\r\n"
@@ -67,8 +61,7 @@ static void test_header( void )
         // invalid headers
         {
             HTTP_EHDRFMT,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             0,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host : example.com\r\n"
@@ -76,8 +69,7 @@ static void test_header( void )
         },
         {
             HTTP_EHDRFMT,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             0,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host: example.com\rinvalid format\n"
@@ -85,8 +77,7 @@ static void test_header( void )
         },
         {
             HTTP_EHDRFMT,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             0,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "invalid header format\r\n"
@@ -94,8 +85,7 @@ static void test_header( void )
         },
         {
             HTTP_EHDRLEN,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             0,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host: this field length will exceeded the limit of maximum header length\r\n"
@@ -103,8 +93,7 @@ static void test_header( void )
         },
         {
             HTTP_ENHDR,
-            HTTP_MGET,
-            HTTP_V10,
+            HTTP_MGET | HTTP_V10,
             3,
             "GET /foo/bar/baz HTTP/1.0\r\n"
             "Host1: example.com\r\n"
@@ -114,20 +103,19 @@ static void test_header( void )
             "\r\n"
         },
         // end of request
-        { 0, 0, 0, 0, "" }
+        { 0, 0, 0, "" }
     };
     test_req_t *ptr = req;
     http_t *r = http_alloc(3);
     int rc;
     
-    while( ptr->code )
+    while( ptr->protocol )
     {
         rc = http_req_parse( r, ptr->entity, strlen(ptr->entity), INT16_MAX, 63 );
         assert( rc == ptr->rc );
         assert( r->nheader == ptr->nheader );
         if( rc == HTTP_SUCCESS ){
-            assert( r->version == ptr->version );
-            assert( r->code == ptr->code );
+            assert( r->protocol == ptr->protocol );
         }
         ptr++;
         http_init( r );
@@ -142,8 +130,7 @@ static void test_header_res( void )
         // HTTP/0.9
         {
             HTTP_SUCCESS,
-            HTTP_OK,
-            HTTP_V09,
+            HTTP_OK | HTTP_V09,
             1,
             "HTTP/0.9 200 OK\r\n"
             "Host: example.com\r\n"
@@ -151,8 +138,7 @@ static void test_header_res( void )
         },
         {
             HTTP_SUCCESS,
-            HTTP_OK,
-            HTTP_V10,
+            HTTP_OK | HTTP_V10,
             1,
             "HTTP/1.0 200 OK\r\n"
             "Host: example.com\r\n"
@@ -160,8 +146,7 @@ static void test_header_res( void )
         },
         {
             HTTP_SUCCESS,
-            HTTP_OK,
-            HTTP_V11,
+            HTTP_OK | HTTP_V11,
             3,
             "HTTP/1.1 200 OK\r\n"
             "Host1: example.com\r\n"
@@ -170,20 +155,19 @@ static void test_header_res( void )
             "\r\n"
         },
         // end of request
-        { 0, 0, 0, 0, "" }
+        { 0, 0, 0, "" }
     };
     test_req_t *ptr = req;
     http_t *r = http_alloc(3);
     int rc;
     
-    while( ptr->code )
+    while( ptr->protocol )
     {
         rc = http_res_parse( r, ptr->entity, strlen(ptr->entity), UINT16_MAX );
         assert( rc == ptr->rc );
         assert( r->nheader == ptr->nheader );
         if( rc == HTTP_SUCCESS ){
-            assert( r->version == ptr->version );
-            assert( r->code == ptr->code );
+            assert( r->protocol == ptr->protocol );
         }
         ptr++;
         http_init( r );

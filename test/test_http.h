@@ -8,8 +8,7 @@
 
 typedef struct {
     int rc;
-    uint8_t code;
-    uint8_t version;
+    uint16_t protocol;
     uint8_t nheader;
     char entity[2049];
 } test_req_t;
