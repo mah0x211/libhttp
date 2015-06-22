@@ -8,7 +8,8 @@
 
 typedef struct {
     int rc;
-    uint16_t request;
+    uint8_t code;
+    uint8_t version;
     uint8_t nheader;
     char entity[2049];
 } test_req_t;
