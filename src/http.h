@@ -78,6 +78,7 @@ enum {
 
 /**
  * HTTP method code
+ * http://www.iana.org/assignments/http-methods/http-methods.xhtml
  */
 enum {
     HTTP_MGET = 1,
