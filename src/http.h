@@ -30,10 +30,95 @@
 #include <stdint.h>
 
 
+/**
+ * HTTP status code
+ * http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+ */
 enum {
-    HTTP_PHASE_METHOD,
+    // 100-102
+    HTTP_CONTINUE = 100,
+    HTTP_SWITCHING_PROTOCOLS,
+    HTTP_PROCESSING,
+    
+    // 200-208
+    HTTP_OK = 200,
+    HTTP_CREATED,
+    HTTP_ACCEPTED,
+    HTTP_NON_AUTHORIATIVE_INFORMATION,
+    HTTP_NO_CONTENT,
+    HTTP_RESET_CONTENT,
+    HTTP_PARTIAL_CONTENT,
+    HTTP_MULTI_STATUS,
+    HTTP_ALREADY_REPORTED,
+    // 226
+    HTTP_IM_USED = 226,
+    
+    // 300-305
+    HTTP_MULTIPLE_CHOICES = 300,
+    HTTP_MOVED_PERMANENTLY,
+    HTTP_FOUND,
+    HTTP_SEE_OTHER,
+    HTTP_NOT_MODIFIED,
+    HTTP_USE_PROXY,
+    // 307-308
+    HTTP_TEMPORARY_REDIRECT = 307,
+    HTTP_PERMANENT_REDIRECT,
+    
+    // 400-417
+    HTTP_BAD_REQUEST = 400,
+    HTTP_UNAUTHORIZED,
+    HTTP_PAYMENT_REQUIRED,
+    HTTP_FORBIDDEN,
+    HTTP_NOT_FOUND,
+    HTTP_METHOD_NOT_ALLOWED,
+    HTTP_NOT_ACCEPTABLE,
+    HTTP_PROXY_AUTHENTICATION_REQUIRED,
+    HTTP_REQUEST_TIMEOUT,
+    HTTP_CONFLICT,
+    HTTP_GONE,
+    HTTP_LENGTH_REQUIRED,
+    HTTP_PRECONDITION_FAILED,
+    HTTP_PAYLOAD_TOO_LARGE,
+    HTTP_URI_TOO_LARGE,
+    HTTP_UNSUPPORTED_MEDIA_TYPE,
+    HTTP_RANGE_NOT_SATISFIABLE,
+    HTTP_EXPECTATION_FAILED,
+    // 421-424
+    HTTP_MISDIRECTED_REQUEST = 421,
+    HTTP_UNPROCESSABLE_ENTITY,
+    HTTP_LOCKED,
+    HTTP_FAILED_DEPENDENCY,
+    // 426
+    HTTP_UPGRADE_REQUIRED = 426,
+    // 428-429
+    HTTP_PRECONDITION_REQUIRED = 428,
+    HTTP_TOO_MANY_REQUESTS,
+    // 431
+    HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+    
+    // 500-508
+    HTTP_INTERNAL_SERVER_ERROR = 500,
+    HTTP_NOT_IMPLEMENTED,
+    HTTP_BAD_GATEWAY,
+    HTTP_SERVICE_UNAVAILABLE,
+    HTTP_GATEWAY_TIMEOUT,
+    HTTP_VERSION_NOT_SUPPORTED,
+    HTTP_VARIANT_ALSO_NEGOTIATES,
+    HTTP_INSUFFICIENT_STORAGE,
+    HTTP_LOOP_DETECTED,
+    // 510-511
+    HTTP_NOT_EXTENDED = 510,
+    HTTP_NETWORK_AUTHENTICATION_REQUIRED
+};
+
+
+enum {
+    HTTP_PHASE_METHOD = 0,
+    HTTP_PHASE_VERSION_RES = 0,
     HTTP_PHASE_URI,
     HTTP_PHASE_VERSION,
+    HTTP_PHASE_STATUS,
+    HTTP_PHASE_REASON,
     HTTP_PHASE_EOL,
     HTTP_PHASE_HEADER,
     HTTP_PHASE_HKEY,
@@ -41,176 +126,22 @@ enum {
     HTTP_PHASE_DONE
 };
 
+
 typedef struct {
     /* read cursor */
     uintptr_t cur;
     /* token head position */
     uintptr_t head;
-
-    /**
-     * protocol 8 bit
-     *
-     * RESPONSE   REQUEST
-     * ---+------+---+-------
-     * ver|status|ver|method
-     * ---+------+----------
-     *  WW|XXXXXX| YY|ZZZZZZ
-     * ---+------+---+-------
-     *
-     * REQUEST
-     * ---+------
-     * ver|method
-     * ---+------
-     *  YY|ZZZZZZ
-     * ---+------
-     *
-     * version X 2 bit
-     * --+----------
-     * 00| HTTP/0.9
-     * 01| HTTP/1.0
-     * 10| HTTP/1.1
-     * --+----------
-     *
-     * method Y 6 bit
-     * ------+---------
-     * 000001| GET
-     * 000010| HEAD
-     * 000011| POST
-     * 000100| PUT
-     * 000101| DELETE
-     * 000110| OPTIONS
-     * 000111| TRACE
-     * 001000| CONNECT
-     * ------+---------
-     *
-     * RESPONSE 8bit
-     * ---+------
-     * ver|method
-     * ---+------
-     *  WW|XXXXXX
-     * ---+------
-     *
-     * version W 2 bit
-     * --+----------
-     * 00| HTTP/0.9
-     * 01| HTTP/1.0
-     * 10| HTTP/1.1
-     * --+----------
-     *
-     * Hypertext Transfer Protocol (HTTP) Status Code Registry
-     * http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-     *
-     * status X 6 bit
-     * ------+-------------------------------------
-     * 000000| 100 Continue
-     * 000001| 101 Switching Protocols
-     * 000010| 102 Processing
-     * ------+-------------------------------------
-     * 103-199 unassigned
-     *
-     * ------+-------------------------------------
-     * 000011| 200 OK
-     * 000100| 201 Created
-     * 000101| 202 Accepted
-     * 000110| 203 Non-Authoriative Information
-     * 000111| 204 No Content
-     * 001000| 205 Reset Content
-     * 001001| 206 Partial Content
-     * 001010| 207 Multi-Status
-     * 001011| 208 Already Reported
-     * ------+-------------------------------------
-     * 209-225 unassigned
-     * ------+-------------------------------------
-     * 001100| 226 IM Used
-     * ------+-------------------------------------
-     * 227-299 unassigned
-     *
-     * ------+-------------------------------------
-     * 001101| 300 Multiple Choices
-     * 001110| 301 Moved Permanently
-     * 001111| 302 Found
-     * 010000| 303 See Other
-     * 010001| 304 Not Modified
-     * 010010| 305 Use Proxy
-     * ------+-------------------------------------
-     * 306 unused
-     * ------+-------------------------------------
-     * 010011| 307 Temporary Redirect
-     * 010100| 308 Permanent Redirect
-     * ------+-------------------------------------
-     * 309-399 unassigned
-     *
-     * ------+-------------------------------------
-     * 010101| 400 Bad Request
-     * 010110| 401 Unauthorized
-     * 010111| 402 Payment Required
-     * 011000| 403 Forbidden
-     * 011001| 404 Not Found
-     * 011010| 405 Method Not Allowed
-     * 011011| 406 Not Acceptable
-     * 011100| 407 Proxy Authentication Required
-     * 011101| 408 Request Timeout
-     * 011110| 409 Conflict
-     * 011111| 410 Gone
-     * 100000| 411 Length Required
-     * 100001| 412 Precondition Failed
-     * 100010| 413 Payload Too Large
-     * 100011| 414 URI Too Large
-     * 100100| 415 Unsupported Media Type
-     * 100101| 416 Range Not Satisfiable
-     * 100110| 417 Expectation Failed
-     * ------+-------------------------------------
-     * 418-420 unassigned
-     * ------+-------------------------------------
-     * 100111| 421 Misdirected Request
-     * 101000| 422 Unprocessable Entity
-     * 101001| 423 Locked
-     * 101010| 424 Failed Dependency
-     * ------+-------------------------------------
-     * 425 unassigned
-     * ------+-------------------------------------
-     * 101011| 426 Upgrade Required
-     * ------+-------------------------------------
-     * 427 unassigned
-     * ------+-------------------------------------
-     * 101100| 428 Precondition Required
-     * 101101| 429 Too Many Requests
-     * ------+-------------------------------------
-     * 430 unassigned
-     * ------+-------------------------------------
-     * 101110| 431 Request Header Fields Too Large
-     * ------+-------------------------------------
-     * 432-499 unassigned
-     *
-     * ------+-------------------------------------
-     * 101111| 500 Internal Server Error
-     * 110000| 501 Not Implemented
-     * 110001| 502 Bad Gateway
-     * 110010| 503 Service Unavailable
-     * 110011| 504 Gateway Timeout
-     * 110100| 505 HTTP Version Not Supported
-     * 110101| 506 Variant Also Negotiates
-     * 110110| 507 Insufficient Storage
-     * 110111| 508 Loop Detected
-     * ------+-------------------------------------
-     * 509 unassigned
-     * ------+-------------------------------------
-     * 111000| 510 Not Extended
-     * 111001| 511 Network Authentication Required
-     * ------+-------------------------------------
-     * 512-599 unassigned
-     *
-     */
-    uint16_t protocol;
-    
-    // phase
+    /* parse phase */
     uint8_t phase;
-    
-    // uri
-    uint8_t uri;
-    uint16_t urilen;
-    
-    // header
+    /* http version 0.9/1.0/1.1 */
+    uint8_t version;
+    /* method or status */
+    uint8_t code;
+    /* uri or message */
+    uint8_t msg;
+    uint16_t msglen;
+    /* header */
     uint8_t nheader;
     uint8_t maxheader;
 } http_t;
@@ -219,33 +150,32 @@ typedef struct {
 /**
  * HTTP version code
  */
-#define HTTP_V09    0x0
-#define HTTP_V10    0x40
-#define HTTP_V11    0x80
+enum {
+    HTTP_V09 = 0,
+    HTTP_V10,
+    HTTP_V11
+};
 
-#define http_req_ver(p) ((p)->protocol & 0xC0)
+#define http_version(p) ((p)->version)
 
 
 /**
  * HTTP method code
  */
-#define HTTP_MGET       0x1
-#define HTTP_MHEAD      0x2
-#define HTTP_MPOST      0x3
-#define HTTP_MPUT       0x4
-#define HTTP_MDELETE    0x5
-#define HTTP_MOPTIONS   0x6
-#define HTTP_MTRACE     0x7
-#define HTTP_MCONNECT   0x8
-
-#define http_req_method(p)  ((p)->protocol & 0x3F)
-
-/**
- * HTTP status code
- */
 enum {
-    HTTP_CONTINUE
+    HTTP_MGET = 1,
+    HTTP_MHEAD,
+    HTTP_MPOST,
+    HTTP_MPUT,
+    HTTP_MDELETE,
+    HTTP_MOPTIONS,
+    HTTP_MTRACE,
+    HTTP_MCONNECT
 };
+
+#define http_method(p)  ((p)->code)
+
+#define http_status(p)  ((p)->code)
 
 
 /**
@@ -284,9 +214,10 @@ http_t *http_alloc( uint8_t maxheader );
         .cur = 0, \
         .head = 0, \
         .phase = 0, \
-        .protocol = 0, \
-        .urilen = 0, \
-        .uri = 0, \
+        .version = 0, \
+        .code = 0, \
+        .msg = 0, \
+        .msglen = 0, \
         .nheader = 0, \
         .maxheader = (r)->maxheader \
     }; \
@@ -324,9 +255,12 @@ void http_free( http_t *r );
 #define HTTP_ENHDR      -9
 /* header-length too large */
 #define HTTP_EHDRLEN    -10
+/* invalid status code */
+#define HTTP_ESTATUS    -11
+
 
 /**
- * parse http 0.9/1.0/1.1 request
+ * parsing the http 0.9/1.0/1.1 request
  */
 int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen );

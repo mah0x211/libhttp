@@ -273,6 +273,40 @@ static const unsigned char HVALC_TBL[256] = {
 };
 
 
+/**
+ * RFC 7230
+ * 3.1.2.  Status Line
+ * https://tools.ietf.org/html/rfc7230#section-3.1.2
+ *
+ * reason-phrase  = *( HTAB / SP / VCHAR / obs-text )
+ *
+ * VCHAR          = %x21-7E
+ * obs-text       = %x80-FF
+ */
+// 0 = HTAB / SP / VCHAR / obs-text
+// 3 = invalid
+static const unsigned char PHRASE_TBL[256] = {
+//                             HT          CR
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+    3, 3, 3, 3, 3, 3, 3,
+//  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  0  1  2  3  4  5  6  7  8  9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//  :  ;  <  =  >  ?  @ 
+    0, 0, 0, 0, 0, 0, 0, 
+//  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//  Z  [  \  ]  ^  _  ` 
+    0, 0, 0, 0, 0, 0, 0,
+//  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  z  {  |  }  ~ 
+    0, 0, 0, 0, 0,
+    3
+};
+
+
 static const unsigned char SPHT[256] = {
 //                             HT
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -284,7 +318,9 @@ static const unsigned char SPHT[256] = {
 // method length
 #define METHOD_LEN  7
 // version length: HTTP/x.x
-#define VER_LEN 8
+#define VER_LEN     8
+// status length
+#define STATUS_LEN  3
 
 #define HEADER_SIZE     (2 * sizeof(uintptr_t) + sizeof(uint32_t))
 #define HKEY_SIZE       (sizeof(uintptr_t) + sizeof(uint16_t))
@@ -308,6 +344,9 @@ static const unsigned char SPHT[256] = {
 }while(0)
 
 
+/**
+ * prototypes
+ */
 static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
 
 
@@ -341,6 +380,7 @@ static int parse_eol( http_t *r, char *buf )
             return HTTP_ELINEFMT;
     }
 }
+
 
 static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
@@ -521,66 +561,76 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *delim = memchr( buf + r->cur, CR, len - r->cur );
     
-    if( delim && delim[1] )
+    if( delim )
     {
-        // calc index(same as token-length)
-        size_t slen = (uintptr_t)delim - (uintptr_t)buf - r->head;
-        match64bit_u src = { .bit = 0 };
-        
-        // unsupported version
-        if( delim[1] != LF || slen != VER_LEN ){
-            return HTTP_EVERSION;
-        }
-        
-        // check version
-        src.bit = *((uint64_t*)(buf + r->head));
-        // HTTP/1.1
-        if( src.bit == V_11.bit ){
-            r->protocol |= HTTP_V11;
-        }
-        // HTTP/1.0
-        else if( src.bit == V_10.bit )
+        if( delim[1] == LF )
         {
-            // illegal request if method is not the GET, HEAD or POST method
-            if( r->protocol > HTTP_MPOST ){
-                return HTTP_EMETHOD;
+            // calc index(same as token-length)
+            size_t slen = (uintptr_t)delim - (uintptr_t)buf - r->head;
+            match64bit_u src = { .bit = 0 };
+            
+            // unsupported version
+            if( delim[1] != LF || slen != VER_LEN ){
+                return HTTP_EVERSION;
             }
-            r->protocol |= HTTP_V10;
-        }
-        // HTTP/0.9
-        else if( src.bit == V_09.bit )
-        {
-            // illegal request if method is not the GET method
-            if( r->protocol != HTTP_MGET ){
-                return HTTP_EMETHOD;
+            
+            // check version
+            src.bit = *((uint64_t*)(buf + r->head));
+            // HTTP/1.1
+            if( src.bit == V_11.bit ){
+                r->version = HTTP_V11;
             }
-            r->protocol |= HTTP_V09;
+            // HTTP/1.0
+            else if( src.bit == V_10.bit )
+            {
+                // illegal request if method is not the GET, HEAD or POST method
+                if( r->code > HTTP_MPOST ){
+                    return HTTP_EMETHOD;
+                }
+                r->version = HTTP_V10;
+            }
+            // HTTP/0.9
+            else if( src.bit == V_09.bit )
+            {
+                // illegal request if method is not the GET method
+                if( r->code != HTTP_MGET ){
+                    return HTTP_EMETHOD;
+                }
+                // skip CRLF
+                r->head = r->cur = r->head + slen + 2;
+                // set next phase
+                r->phase = HTTP_PHASE_EOL;
+                
+                return parse_eol( r, buf );
+            }
+            // unsupported version
+            else {
+                return HTTP_EVERSION;
+            }
+            
             // skip CRLF
             r->head = r->cur = r->head + slen + 2;
             // set next phase
-            r->phase = HTTP_PHASE_EOL;
+            r->phase = HTTP_PHASE_HEADER;
             
-            return parse_eol( r, buf );
+            return parse_header( r, buf, len, maxhdrlen );
         }
-        // unsupported version
-        else {
-            return HTTP_EVERSION;
+        // invalid line format
+        else if( delim[1] ){
+            return HTTP_ELINEFMT;
         }
         
-        // skip CRLF
-        r->head = r->cur = r->head + slen + 2;
-        // set next phase
-        r->phase = HTTP_PHASE_HEADER;
-        
-        return parse_header( r, buf, len, maxhdrlen );
+        // update cursor
+        r->cur = (uintptr_t)delim - (uintptr_t)buf;
     }
     // invalid version format
     else if( ( len - r->head ) > VER_LEN ){
         return HTTP_EVERSION;
     }
-    
     // update parse cursor
-    r->cur = len;
+    else {
+        r->cur = len;
+    }
     
     return HTTP_EAGAIN;
 }
@@ -600,7 +650,7 @@ static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
             // reset errno
             errno = 0;
             // HTTP/0.9 supports a GET method only
-            if( r->protocol != HTTP_MGET ){
+            if( r->code != HTTP_MGET ){
                 return HTTP_EMETHOD;
             }
             
@@ -620,10 +670,10 @@ static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
 
 CHECK_URI:
         // calc uri-length
-        r->uri = (uint8_t)r->head;
-        r->urilen = (uint16_t)((uintptr_t)delim - (uintptr_t)buf - r->head);
+        r->msg = (uint8_t)r->head;
+        r->msglen = (uint16_t)((uintptr_t)delim - (uintptr_t)buf - r->head);
         // request-uri too long
-        if( r->urilen > maxurilen ){
+        if( r->msglen > maxurilen ){
             return HTTP_EURILEN;
         }
         // HTTP/0.9 request
@@ -632,7 +682,7 @@ CHECK_URI:
         }
         
         // update cursor and token head position
-        r->head = r->cur = r->head + r->urilen + 1;
+        r->head = r->cur = r->head + r->msglen + 1;
         
         return parse_ver( r, buf, len, maxhdrlen );
     }
@@ -646,7 +696,6 @@ CHECK_URI:
     
     return HTTP_EAGAIN;
 }
-
 
 
 static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
@@ -666,28 +715,28 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         memcpy( src.str, buf, slen );
         // check method
         if( src.bit == M_GET.bit ){
-            r->protocol = HTTP_MGET;
+            r->code = HTTP_MGET;
         }
         else if( src.bit == M_POST.bit ){
-            r->protocol = HTTP_MPOST;
+            r->code = HTTP_MPOST;
         }
         else if( src.bit == M_PUT.bit ){
-            r->protocol = HTTP_MPUT;
+            r->code = HTTP_MPUT;
         }
         else if( src.bit == M_DELETE.bit ){
-            r->protocol = HTTP_MDELETE;
+            r->code = HTTP_MDELETE;
         }
         else if( src.bit == M_HEAD.bit ){
-            r->protocol = HTTP_MHEAD;
+            r->code = HTTP_MHEAD;
         }
         else if( src.bit == M_OPTIONS.bit ){
-            r->protocol = HTTP_MOPTIONS;
+            r->code = HTTP_MOPTIONS;
         }
         else if( src.bit == M_TRACE.bit ){
-            r->protocol = HTTP_MTRACE;
+            r->code = HTTP_MTRACE;
         }
         else if( src.bit == M_CONNECT.bit ){
-            r->protocol = HTTP_MCONNECT;
+            r->code = HTTP_MCONNECT;
         }
         // method not implemented
         else {
