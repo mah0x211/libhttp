@@ -47,5 +47,6 @@ AC_CONFIG_FILES([Makefile \
                  libhttp.pc \
                  src/Makefile \
                  test/Makefile \
-                 bench/Makefile])
+                 bench/Makefile \
+                 example/Makefile])
 AC_OUTPUT
