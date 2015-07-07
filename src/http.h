@@ -79,7 +79,7 @@ enum {
     HTTP_V11 = 0x2000
 };
 
-#define http_version(p) ((p)->protocol & 0xF000)
+#define http_version(h) ((h)->protocol & 0xF000)
 
 
 /**
@@ -97,7 +97,7 @@ enum {
     HTTP_MCONNECT
 };
 
-#define http_method(p)  ((p)->protocol & 0xFFF)
+#define http_method(h)  ((h)->protocol & 0xFFF)
 
 
 /**
@@ -181,7 +181,7 @@ enum {
     HTTP_NETWORK_AUTHENTICATION_REQUIRED
 };
 
-#define http_status(p)  ((p)->protocol & 0xFFF)
+#define http_status(h)  ((h)->protocol & 0xFFF)
 
 
 /**
@@ -215,8 +215,8 @@ http_t *http_alloc( uint8_t maxheader );
 /**
  * initialize data members
  */
-#define http_init(r) do{ \
-    *(r) = (http_t){ \
+#define http_init(h) do{ \
+    *(h) = (http_t){ \
         .cur = 0, \
         .head = 0, \
         .phase = 0, \
@@ -224,7 +224,7 @@ http_t *http_alloc( uint8_t maxheader );
         .msg = 0, \
         .msglen = 0, \
         .nheader = 0, \
-        .maxheader = (r)->maxheader \
+        .maxheader = (h)->maxheader \
     }; \
 }while(0)
 
@@ -232,7 +232,7 @@ http_t *http_alloc( uint8_t maxheader );
 /**
  * deallocate http_t*
  */
-void http_free( http_t *r );
+void http_free( http_t *h );
 
 
 /**
@@ -267,14 +267,14 @@ void http_free( http_t *r );
 /**
  * parsing the http 0.9/1.0/1.1 request
  */
-int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
+int http_req_parse( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen );
 
 
 /**
  * parsing the http 0.9/1.0/1.1 response
  */
-int http_res_parse( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
+int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen );
 
 #endif
 

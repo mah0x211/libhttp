@@ -325,20 +325,20 @@ static const unsigned char SPHT[256] = {
 #define HEADER_SIZE     (2 * sizeof(uintptr_t) + sizeof(uint32_t))
 #define HKEY_SIZE       (sizeof(uintptr_t) + sizeof(uint16_t))
 
-#define GET_HKEY_PTR(r,n) \
-    (&((uint8_t*)r)[sizeof( http_t ) + HEADER_SIZE * n])
+#define GET_HKEY_PTR(h,n) \
+    (&((uint8_t*)(h))[sizeof( http_t ) + HEADER_SIZE * n])
 
-#define GET_HVAL_PTR(r,n) \
-    (&((uint8_t*)r)[sizeof( http_t ) + HEADER_SIZE * n + HKEY_SIZE])
+#define GET_HVAL_PTR(h,n) \
+    (&((uint8_t*)(h))[sizeof( http_t ) + HEADER_SIZE * n + HKEY_SIZE])
 
-#define ADD_HKEY(r,k,l) do{ \
-    uint8_t *mem = GET_HKEY_PTR(r, r->nheader); \
+#define ADD_HKEY(h,k,l) do{ \
+    uint8_t *mem = GET_HKEY_PTR(h, (h)->nheader); \
     *(uintptr_t*)mem = k; \
     *(uint16_t*)&mem[sizeof( uintptr_t )] = (uint16_t)l; \
 }while(0)
 
-#define ADD_HVAL(r,v,l) do{ \
-    uint8_t *mem = GET_HVAL_PTR(r, r->nheader); \
+#define ADD_HVAL(h,v,l) do{ \
+    uint8_t *mem = GET_HVAL_PTR(h, (h)->nheader); \
     *(uintptr_t*)mem = v; \
     *(uint16_t*)&mem[sizeof( uintptr_t )] = (uint16_t)(l); \
 }while(0)
@@ -347,16 +347,16 @@ static const unsigned char SPHT[256] = {
 /**
  * prototypes
  */
-static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen );
+static int parse_hkey( http_t *h, char *buf, size_t len, uint16_t maxhdrlen );
 
 
 /**
  * wait the end-of-line(CRLF)
  * HTTP/0.9 does not support the header
  */
-static int parse_eol( http_t *r, char *buf )
+static int parse_eol( http_t *h, char *buf )
 {
-    char *str = buf + r->cur;
+    char *str = buf + h->cur;
     
     switch( *str )
     {
@@ -371,8 +371,8 @@ static int parse_eol( http_t *r, char *buf )
             }
             else if( str[1] == LF ){
                 // calc and save index
-                r->head = r->cur = r->cur + 2;
-                r->phase = HTTP_PHASE_DONE;
+                h->head = h->cur = h->cur + 2;
+                h->phase = HTTP_PHASE_DONE;
                 return HTTP_SUCCESS;
             }
         
@@ -382,9 +382,9 @@ static int parse_eol( http_t *r, char *buf )
 }
 
 
-static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_header( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *str = buf + r->cur;
+    char *str = buf + h->cur;
     
     switch( *str )
     {
@@ -399,18 +399,18 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             }
             else if( str[1] == LF ){
                 // calc and save index
-                r->head = r->cur = r->cur + 2;
-                r->phase = HTTP_PHASE_DONE;
+                h->head = h->cur = h->cur + 2;
+                h->phase = HTTP_PHASE_DONE;
                 return HTTP_SUCCESS;
             }
             // invalid header format
             return HTTP_EHDRFMT;
         
         default:
-            if( r->nheader < r->maxheader ){
+            if( h->nheader < h->maxheader ){
                 // set next parser hkey
-                r->phase = HTTP_PHASE_HKEY;
-                return parse_hkey( r, buf, len, maxhdrlen );
+                h->phase = HTTP_PHASE_HKEY;
+                return parse_hkey( h, buf, len, maxhdrlen );
             }
             // too many headers
             return HTTP_ENHDR;
@@ -418,11 +418,11 @@ static int parse_header( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 }
 
 
-static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     unsigned char *delim = (unsigned char*)buf;
-    uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( r, r->nheader );
-    size_t cur = r->cur;
+    uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( h, h->nheader );
+    size_t cur = h->cur;
     
     for(; cur < len; cur++ )
     {
@@ -449,14 +449,14 @@ static int parse_hval( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
                     }
                     
                     // calc value-length
-                    ADD_HVAL( r, r->head, tail - r->head );
-                    r->nheader++;
+                    ADD_HVAL( h, h->head, tail - h->head );
+                    h->nheader++;
                     // skip CRLF
-                    r->head = r->cur = cur + 2;
+                    h->head = h->cur = cur + 2;
                     // set next parser
-                    r->phase = HTTP_PHASE_HEADER;
+                    h->phase = HTTP_PHASE_HEADER;
                     
-                    return parse_header( r, buf, len, maxhdrlen );
+                    return parse_header( h, buf, len, maxhdrlen );
                 }
                 // null-terminator
                 else if( !delim[cur+1] ){
@@ -474,17 +474,17 @@ CHECK_AGAIN:
     if( ( len - hkey ) > maxhdrlen ){
         return HTTP_EHDRLEN;
     }
-    r->cur = cur;
+    h->cur = cur;
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_hkey( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_hkey( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     unsigned char *delim = (unsigned char*)buf;
-    size_t cur = r->cur;
-    uintptr_t klen = r->head;
+    size_t cur = h->cur;
+    uintptr_t klen = h->head;
     unsigned char c = 0;
     
 RECHECK:
@@ -516,12 +516,12 @@ RECHECK:
                     else if( delim[cur] == CR )
                     {
                         if( !delim[cur+1] ){
-                            r->cur = cur;
-                            r->phase = HTTP_PHASE_HEADER;
+                            h->cur = cur;
+                            h->phase = HTTP_PHASE_HEADER;
                             return EAGAIN;
                         }
                         else if( delim[cur+1] == LF ){
-                            r->head = klen = cur += 2;
+                            h->head = klen = cur += 2;
                             goto RECHECK;
                         }
                     }
@@ -529,44 +529,44 @@ RECHECK:
                 }
                 
                 // set key-index and hkey-length
-                ADD_HKEY( r, r->head, klen );
+                ADD_HKEY( h, h->head, klen );
                 // set cursor
-                r->head = r->cur = cur;
+                h->head = h->cur = cur;
                 // set next parser
-                r->phase = HTTP_PHASE_HVAL;
+                h->phase = HTTP_PHASE_HVAL;
                 
                 if( cur >= len ){
                     return HTTP_EAGAIN;
                 }
                 
-                return parse_hval( r, buf, len, maxhdrlen );
+                return parse_hval( h, buf, len, maxhdrlen );
         }
         delim[cur] = c;
         cur++;
         goto RECHECK;
     }
     // header-length too large
-    else if( ( len - r->head ) > maxhdrlen ){
+    else if( ( len - h->head ) > maxhdrlen ){
         return HTTP_EHDRLEN;
     }
     
     // update parse cursor
-    r->cur = len;
+    h->cur = len;
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = memchr( buf + r->cur, CR, len - r->cur );
+    char *delim = memchr( buf + h->cur, CR, len - h->cur );
     
     if( delim )
     {
         if( delim[1] == LF )
         {
             // calc index(same as token-length)
-            size_t slen = (uintptr_t)delim - (uintptr_t)buf - r->head;
+            size_t slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
             match64bit_u src = { .bit = 0 };
             
             // unsupported version
@@ -575,33 +575,33 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             }
             
             // check version
-            src.bit = *((uint64_t*)(buf + r->head));
+            src.bit = *((uint64_t*)(buf + h->head));
             // HTTP/1.1
             if( src.bit == V_11.bit ){
-                r->protocol |= HTTP_V11;
+                h->protocol |= HTTP_V11;
             }
             // HTTP/1.0
             else if( src.bit == V_10.bit )
             {
                 // illegal request if method is not the GET, HEAD or POST method
-                if( r->protocol > HTTP_MPOST ){
+                if( h->protocol > HTTP_MPOST ){
                     return HTTP_EMETHOD;
                 }
-                r->protocol |= HTTP_V10;
+                h->protocol |= HTTP_V10;
             }
             // HTTP/0.9
             else if( src.bit == V_09.bit )
             {
                 // illegal request if method is not the GET method
-                if( r->protocol != HTTP_MGET ){
+                if( h->protocol != HTTP_MGET ){
                     return HTTP_EMETHOD;
                 }
                 // skip CRLF
-                r->head = r->cur = r->head + slen + 2;
+                h->head = h->cur = h->head + slen + 2;
                 // set next phase
-                r->phase = HTTP_PHASE_EOL;
+                h->phase = HTTP_PHASE_EOL;
                 
-                return parse_eol( r, buf );
+                return parse_eol( h, buf );
             }
             // unsupported version
             else {
@@ -609,11 +609,11 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             }
             
             // skip CRLF
-            r->head = r->cur = r->head + slen + 2;
+            h->head = h->cur = h->head + slen + 2;
             // set next phase
-            r->phase = HTTP_PHASE_HEADER;
+            h->phase = HTTP_PHASE_HEADER;
             
-            return parse_header( r, buf, len, maxhdrlen );
+            return parse_header( h, buf, len, maxhdrlen );
         }
         // invalid line format
         else if( delim[1] ){
@@ -621,25 +621,25 @@ static int parse_ver( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         }
         
         // update cursor
-        r->cur = (uintptr_t)delim - (uintptr_t)buf;
+        h->cur = (uintptr_t)delim - (uintptr_t)buf;
     }
     // invalid version format
-    else if( ( len - r->head ) > VER_LEN ){
+    else if( ( len - h->head ) > VER_LEN ){
         return HTTP_EVERSION;
     }
     // update parse cursor
     else {
-        r->cur = len;
+        h->cur = len;
     }
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
+static int parse_uri( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                       uint16_t maxhdrlen )
 {
-    char *delim = strchr_brk( buf + r->cur, len - r->cur, SP, URIC_TBL );
+    char *delim = strchr_brk( buf + h->cur, len - h->cur, SP, URIC_TBL );
     
     // EILSEQ: illegal byte sequence == HTTP_BAD_REQUEST
     if( errno )
@@ -650,12 +650,12 @@ static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
             // reset errno
             errno = 0;
             // HTTP/0.9 supports a GET method only
-            if( r->protocol != HTTP_MGET ){
+            if( h->protocol != HTTP_MGET ){
                 return HTTP_EMETHOD;
             }
             
             // set next phase
-            r->phase = HTTP_PHASE_DONE;
+            h->phase = HTTP_PHASE_DONE;
             goto CHECK_URI;
         }
         
@@ -666,42 +666,42 @@ static int parse_uri( http_t *r, char *buf, size_t len, uint16_t maxurilen,
     else if( delim )
     {
         // set next phase
-        r->phase = HTTP_PHASE_VERSION;
+        h->phase = HTTP_PHASE_VERSION;
 
 CHECK_URI:
         // calc uri-length
-        r->msg = (uint8_t)r->head;
-        r->msglen = (uint16_t)((uintptr_t)delim - (uintptr_t)buf - r->head);
+        h->msg = (uint8_t)h->head;
+        h->msglen = (uint16_t)((uintptr_t)delim - (uintptr_t)buf - h->head);
         // request-uri too long
-        if( r->msglen > maxurilen ){
+        if( h->msglen > maxurilen ){
             return HTTP_EURILEN;
         }
         // HTTP/0.9 request
-        else if( r->phase == HTTP_PHASE_DONE ){
+        else if( h->phase == HTTP_PHASE_DONE ){
             return HTTP_SUCCESS;
         }
         
         // update cursor and token head position
-        r->head = r->cur = r->head + r->msglen + 1;
+        h->head = h->cur = h->head + h->msglen + 1;
         
-        return parse_ver( r, buf, len, maxhdrlen );
+        return parse_ver( h, buf, len, maxhdrlen );
     }
     // request-uri too long
-    else if( len - r->head > maxurilen ){
+    else if( len - h->head > maxurilen ){
         return HTTP_EURILEN;
     }
     
     // update parse cursor
-    r->cur = len;
+    h->cur = len;
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
+static int parse_method( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                          uint16_t maxhdrlen )
 {
-    char *delim = memchr( buf + r->cur, SP, len );
+    char *delim = memchr( buf + h->cur, SP, len );
     
     if( delim )
     {
@@ -715,28 +715,28 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         memcpy( src.str, buf, slen );
         // check method
         if( src.bit == M_GET.bit ){
-            r->protocol = HTTP_MGET;
+            h->protocol = HTTP_MGET;
         }
         else if( src.bit == M_POST.bit ){
-            r->protocol = HTTP_MPOST;
+            h->protocol = HTTP_MPOST;
         }
         else if( src.bit == M_PUT.bit ){
-            r->protocol = HTTP_MPUT;
+            h->protocol = HTTP_MPUT;
         }
         else if( src.bit == M_DELETE.bit ){
-            r->protocol = HTTP_MDELETE;
+            h->protocol = HTTP_MDELETE;
         }
         else if( src.bit == M_HEAD.bit ){
-            r->protocol = HTTP_MHEAD;
+            h->protocol = HTTP_MHEAD;
         }
         else if( src.bit == M_OPTIONS.bit ){
-            r->protocol = HTTP_MOPTIONS;
+            h->protocol = HTTP_MOPTIONS;
         }
         else if( src.bit == M_TRACE.bit ){
-            r->protocol = HTTP_MTRACE;
+            h->protocol = HTTP_MTRACE;
         }
         else if( src.bit == M_CONNECT.bit ){
-            r->protocol = HTTP_MCONNECT;
+            h->protocol = HTTP_MCONNECT;
         }
         // method not implemented
         else {
@@ -744,11 +744,11 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
         }
 
         // update parse cursor, token-head and url head
-        r->head = r->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
+        h->head = h->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
         // set next phase
-        r->phase = HTTP_PHASE_URI;
+        h->phase = HTTP_PHASE_URI;
         
-        return parse_uri( r, buf, len, maxurilen, maxhdrlen );
+        return parse_uri( h, buf, len, maxurilen, maxhdrlen );
     }
     // method not implemented
     else if( len > METHOD_LEN ){
@@ -756,37 +756,37 @@ static int parse_method( http_t *r, char *buf, size_t len, uint16_t maxurilen,
     }
     
     // update cursor
-    r->cur = len;
+    h->cur = len;
     
     return HTTP_EAGAIN;
 }
 
 
-int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
+int http_req_parse( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                     uint16_t maxhdrlen )
 {
-    switch( r->phase )
+    switch( h->phase )
     {
         case HTTP_PHASE_METHOD:
-            return parse_method( r, buf, len, maxurilen, maxhdrlen );
+            return parse_method( h, buf, len, maxurilen, maxhdrlen );
         
         case HTTP_PHASE_URI:
-            return parse_uri( r, buf, len, maxurilen, maxhdrlen );
+            return parse_uri( h, buf, len, maxurilen, maxhdrlen );
         
         case HTTP_PHASE_VERSION:
-            return parse_ver( r, buf, len, maxhdrlen );
+            return parse_ver( h, buf, len, maxhdrlen );
 
         case HTTP_PHASE_EOL:
-            return parse_eol( r, buf );
+            return parse_eol( h, buf );
             
         case HTTP_PHASE_HEADER:
-            return parse_header( r, buf, len, maxhdrlen );
+            return parse_header( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_HKEY:
-            return parse_hkey( r, buf, len, maxhdrlen );
+            return parse_hkey( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_HVAL:
-            return parse_hval( r, buf, len, maxhdrlen );
+            return parse_hval( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_DONE:
             return HTTP_SUCCESS;
@@ -796,10 +796,10 @@ int http_req_parse( http_t *r, char *buf, size_t len, uint16_t maxurilen,
 }
 
 
-static int parse_reason( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     unsigned char *delim = (unsigned char*)buf;
-    size_t cur = r->cur;
+    size_t cur = h->cur;
     
     for(; cur < len; cur++ )
     {
@@ -815,19 +815,19 @@ static int parse_reason( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
                 if( delim[cur+1] == LF )
                 {
                     // check length
-                    if( ( cur - r->head ) > UINT16_MAX ){
+                    if( ( cur - h->head ) > UINT16_MAX ){
                         return HTTP_ELINEFMT;
                     }
                     
                     // calc reason-length
-                    r->msg = (uint8_t)r->head;
-                    r->msglen = (uint16_t)(cur - r->head);
+                    h->msg = (uint8_t)h->head;
+                    h->msglen = (uint16_t)(cur - h->head);
                     // skip CRLF
-                    r->head = r->cur = cur + 2;
+                    h->head = h->cur = cur + 2;
                     // set next parser
-                    r->phase = HTTP_PHASE_HEADER;
+                    h->phase = HTTP_PHASE_HEADER;
                     
-                    return parse_header( r, buf, len, maxhdrlen );
+                    return parse_header( h, buf, len, maxhdrlen );
                 }
                 // null-terminator
                 else if( !delim[cur+1] ){
@@ -842,22 +842,22 @@ static int parse_reason( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 
 CHECK_AGAIN:
     // header-length too large
-    if( ( len - r->head ) > UINT16_MAX ){
+    if( ( len - h->head ) > UINT16_MAX ){
         return HTTP_EHDRLEN;
     }
-    r->cur = cur;
+    h->cur = cur;
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_status( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_status( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = memchr( buf + r->cur, SP, len - r->cur );
+    char *delim = memchr( buf + h->cur, SP, len - h->cur );
     
     if( delim )
     {
-        unsigned char *head = (unsigned char*)(buf + r->head);
+        unsigned char *head = (unsigned char*)(buf + h->head);
         size_t slen = (uintptr_t)delim - (uintptr_t)head;
         
         // invalid status code
@@ -869,31 +869,31 @@ static int parse_status( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         }
         
         // set status
-        r->protocol |= ( head[0] - 0x30 ) * 100 +
+        h->protocol |= ( head[0] - 0x30 ) * 100 +
                        ( head[1] - 0x30 ) * 10 +
                        ( head[2] - 0x30 );
         // update parse cursor, token-head and url head
-        r->head = r->cur = r->head + slen + 1;
+        h->head = h->cur = h->head + slen + 1;
         // set next phase
-        r->phase = HTTP_PHASE_REASON;
+        h->phase = HTTP_PHASE_REASON;
         
-        return parse_reason( r, buf, len, maxhdrlen );
+        return parse_reason( h, buf, len, maxhdrlen );
     }
     // method not implemented
-    else if( ( len - r->cur ) > STATUS_LEN ){
+    else if( ( len - h->cur ) > STATUS_LEN ){
         return HTTP_ESTATUS;
     }
     
     // update cursor
-    r->cur = len;
+    h->cur = len;
     
     return HTTP_EAGAIN;
 }
 
 
-static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+static int parse_ver_res( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = memchr( buf + r->cur, SP, len - r->cur );
+    char *delim = memchr( buf + h->cur, SP, len - h->cur );
     
     if( delim )
     {
@@ -903,21 +903,21 @@ static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
         if( slen == VER_LEN )
         {
             match64bit_u src = {
-                .bit = *((uint64_t*)(buf + r->head))
+                .bit = *((uint64_t*)(buf + h->head))
             };
             
             // check version
             // HTTP/1.1
             if( src.bit == V_11.bit ){
-                r->protocol = HTTP_V11;
+                h->protocol = HTTP_V11;
             }
             // HTTP/1.0
             else if( src.bit == V_10.bit ){
-                r->protocol = HTTP_V10;
+                h->protocol = HTTP_V10;
             }
             // HTTP/0.9
             else if( src.bit == V_09.bit ){
-                r->protocol = HTTP_V09;
+                h->protocol = HTTP_V09;
             }
             // unsupported version
             else {
@@ -925,57 +925,57 @@ static int parse_ver_res( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
             }
             
             // skip SP
-            r->head = r->cur = VER_LEN + 1;
+            h->head = h->cur = VER_LEN + 1;
             // set next phase
-            r->phase = HTTP_PHASE_STATUS;
+            h->phase = HTTP_PHASE_STATUS;
             
-            return parse_status( r, buf, len, maxhdrlen );
+            return parse_status( h, buf, len, maxhdrlen );
         }
         
         // HTTP/0.9 simple-response
-        r->protocol = HTTP_V09;
-        r->cur = 0;
+        h->protocol = HTTP_V09;
+        h->cur = 0;
         
         return HTTP_SUCCESS;
     }
     // HTTP/0.9 simple-response
     else if( len > VER_LEN ){
-        r->protocol = HTTP_V09;
-        r->cur = 0;
+        h->protocol = HTTP_V09;
+        h->cur = 0;
         return HTTP_SUCCESS;
     }
     
     // update parse cursor
-    r->cur = len;
+    h->cur = len;
     
     return HTTP_EAGAIN;
 }
 
 
-int http_res_parse( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
+int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    switch( r->phase )
+    switch( h->phase )
     {
         case HTTP_PHASE_VERSION_RES:
-            return parse_ver_res( r, buf, len, maxhdrlen );
+            return parse_ver_res( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_STATUS:
-            return parse_status( r, buf, len, maxhdrlen );
+            return parse_status( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_REASON:
-            return parse_reason( r, buf, len, maxhdrlen );
+            return parse_reason( h, buf, len, maxhdrlen );
 
         case HTTP_PHASE_EOL:
-            return parse_eol( r, buf );
+            return parse_eol( h, buf );
         
         case HTTP_PHASE_HEADER:
-            return parse_header( r, buf, len, maxhdrlen );
+            return parse_header( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_HKEY:
-            return parse_hkey( r, buf, len, maxhdrlen );
+            return parse_hkey( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_HVAL:
-            return parse_hval( r, buf, len, maxhdrlen );
+            return parse_hval( h, buf, len, maxhdrlen );
         
         case HTTP_PHASE_DONE:
             return HTTP_SUCCESS;
@@ -987,27 +987,27 @@ int http_res_parse( http_t *r, char *buf, size_t len, uint16_t maxhdrlen )
 
 http_t *http_alloc( uint8_t maxheader )
 {
-    http_t *r = (http_t*)calloc( 1, http_alloc_size( maxheader ) );
+    http_t *h = (http_t*)calloc( 1, http_alloc_size( maxheader ) );
     
-    if( r ){
-        r->maxheader = maxheader;
+    if( h ){
+        h->maxheader = maxheader;
     }
     
-    return r;
+    return h;
 }
 
 
-void http_free( http_t *r )
+void http_free( http_t *h )
 {
-    free( (void*)r );
+    free( (void*)h );
 }
 
 
-int http_getheader_at( http_t *r, uintptr_t *key, uint16_t *klen, 
+int http_getheader_at( http_t *h, uintptr_t *key, uint16_t *klen, 
                        uintptr_t *val, uint16_t *vlen, uint8_t at )
 {
-    if( at < r->nheader ){
-        uint8_t *mem = GET_HKEY_PTR( r, at );
+    if( at < h->nheader ){
+        uint8_t *mem = GET_HKEY_PTR( h, at );
     
         *key = *(uintptr_t*)mem;
         *klen = *(uint16_t*)&mem[sizeof( uintptr_t )];
