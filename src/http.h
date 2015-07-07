@@ -65,6 +65,12 @@ typedef struct {
 
 
 /**
+ * current cursor
+ */
+#define http_cursor(h)  ((h)->cur)
+
+
+/**
  * HTTP version code
  */
 enum {
