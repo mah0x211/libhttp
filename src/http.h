@@ -262,6 +262,8 @@ void http_free( http_t *h );
 #define HTTP_EHDRLEN    -10
 /* invalid status code */
 #define HTTP_ESTATUS    -11
+/* invalid reason-phrase */
+#define HTTP_EREASON    -12
 
 
 /**

@@ -814,12 +814,12 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                 // found LF
                 if( delim[cur+1] == LF )
                 {
-                    // check length
+                    // phrase-length too large
                     if( ( cur - h->head ) > UINT16_MAX ){
-                        return HTTP_ELINEFMT;
+                        return HTTP_EREASON;
                     }
 
-                    // calc reason-length
+                    // calc phrase-length
                     h->msg = (uint8_t)h->head;
                     h->msglen = (uint16_t)(cur - h->head);
                     // skip CRLF
@@ -836,14 +836,14 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 
             // invalid
             default:
-                return HTTP_EHDRFMT;
+                return HTTP_EREASON;
         }
     }
 
 CHECK_AGAIN:
-    // header-length too large
+    // phrase-length too large
     if( ( len - h->head ) > UINT16_MAX ){
-        return HTTP_EHDRLEN;
+        return HTTP_EREASON;
     }
     h->cur = cur;
 
