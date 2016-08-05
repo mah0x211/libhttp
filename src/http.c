@@ -2,9 +2,9 @@
  *  Copyright 2015 Masatoshi Teruya All rights reserved.
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to 
- *  deal in the Software without restriction, including without limitation the 
- *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+ *  of this software and associated documentation files (the "Software"), to
+ *  deal in the Software without restriction, including without limitation the
+ *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  *  sell copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
  *
@@ -13,9 +13,9 @@
  *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
  *  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  *  IN THE SOFTWARE.
  *
@@ -28,7 +28,7 @@
         1:GET[SP]URL[CRLF]
         [CRLF](end of headers)
         ...(request body)
-        
+
     HTTP 1.0/1.1:
         1:METHOD[SP]URL[SP]HTTP/1.1[CRLF]
         2:header:[LWS]*data[CRLF]
@@ -36,7 +36,7 @@
         n:...[CRLF]
         [CRLF](end of headers)
         ...(request body)
-        
+
         LWS = SP|HT
 */
 #include "http.h"
@@ -120,12 +120,12 @@ static match64bit_u V_11 = {
  * --------------------------------------------------------------------------
  * pchar         = unreserved | pct-encoded | sub-delim | ":" | "@"
  * --------------------------------------------------------------------------
- * URI           = scheme "://" 
+ * URI           = scheme "://"
  *                 [ userinfo[ ":" userinfo ] "@" ]
  *                 host
  *                 [ ":" port ]
- *                 path 
- *                 [ "?" query ] 
+ *                 path
+ *                 [ "?" query ]
  *                 [ "#" fragment ]
  * --------------------------------------------------------------------------
  * scheme        = alpha *( alpha / digit / "+" / "-" / "." )
@@ -146,26 +146,26 @@ static match64bit_u V_11 = {
  */
 static const unsigned char URIC_TBL[256] = {
 //  ctrl-code: 0-32
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0,
 //  SP      "  #
-    0, '!', 0, 0, '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', 
+    0, '!', 0, 0, '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 //  digit
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 
-//            <       > 
-    ':', ';', 0, '=', 0, '?', '@', 
+//            <       >
+    ':', ';', 0, '=', 0, '?', '@',
 
 //  alpha-upper
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 
 //       \       ^       `
-    '[', 0, ']', 0, '_', 0, 
+    '[', 0, ']', 0, '_', 0,
 
 //  alpha-lower
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
-    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 
 //  {  |  }
     0, 0, 0, '~'
@@ -207,7 +207,7 @@ static const unsigned char URIC_TBL[256] = {
  *
  * VCHAR          = %x21-7E
  * delimiters     = "(),/:;<=>?@[\]{}
- * 
+ *
  */
 static const unsigned char HKEYC_TBL[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -253,21 +253,21 @@ static const unsigned char HKEYC_TBL[256] = {
 // 3 = invalid
 static const unsigned char HVALC_TBL[256] = {
 //                             HT          CR
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     3, 3, 3, 3, 3, 3, 3,
 //  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //  0  1  2  3  4  5  6  7  8  9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-//  :  ;  <  =  >  ?  @ 
-    0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  :  ;  <  =  >  ?  @
+    0, 0, 0, 0, 0, 0, 0,
 //  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-//  Z  [  \  ]  ^  _  ` 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  Z  [  \  ]  ^  _  `
     0, 0, 0, 0, 0, 0, 0,
 //  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  z  {  |  }  ~ 
+//  z  {  |  }  ~
     0, 0, 0, 0, 0,
     3
 };
@@ -287,21 +287,21 @@ static const unsigned char HVALC_TBL[256] = {
 // 3 = invalid
 static const unsigned char PHRASE_TBL[256] = {
 //                             HT          CR
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     3, 3, 3, 3, 3, 3, 3,
 //  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //  0  1  2  3  4  5  6  7  8  9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-//  :  ;  <  =  >  ?  @ 
-    0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  :  ;  <  =  >  ?  @
+    0, 0, 0, 0, 0, 0, 0,
 //  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-//  Z  [  \  ]  ^  _  ` 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  Z  [  \  ]  ^  _  `
     0, 0, 0, 0, 0, 0, 0,
 //  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  z  {  |  }  ~ 
+//  z  {  |  }  ~
     0, 0, 0, 0, 0,
     3
 };
@@ -309,7 +309,7 @@ static const unsigned char PHRASE_TBL[256] = {
 
 static const unsigned char SPHT[256] = {
 //                             HT
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //                          SP
     0, 0, 0, 0, 0, 0, 0, 0, 1
 };
@@ -357,13 +357,13 @@ static int parse_hkey( http_t *h, char *buf, size_t len, uint16_t maxhdrlen );
 static int parse_eol( http_t *h, char *buf )
 {
     char *str = buf + h->cur;
-    
+
     switch( *str )
     {
         // need more bytes
         case 0:
             return HTTP_EAGAIN;
-        
+
         // check header-tail
         case CR:
             if( !str[1] ){
@@ -375,7 +375,7 @@ static int parse_eol( http_t *h, char *buf )
                 h->phase = HTTP_PHASE_DONE;
                 return HTTP_SUCCESS;
             }
-        
+
         default:
             return HTTP_ELINEFMT;
     }
@@ -385,13 +385,13 @@ static int parse_eol( http_t *h, char *buf )
 static int parse_header( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *str = buf + h->cur;
-    
+
     switch( *str )
     {
         // need more bytes
         case 0:
             return HTTP_EAGAIN;
-        
+
         // check header-tail
         case CR:
             if( !str[1] ){
@@ -405,7 +405,7 @@ static int parse_header( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             }
             // invalid header format
             return HTTP_EHDRFMT;
-        
+
         default:
             if( h->nheader < h->maxheader ){
                 // set next parser hkey
@@ -423,7 +423,7 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     unsigned char *delim = (unsigned char*)buf;
     uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( h, h->nheader );
     size_t cur = h->cur;
-    
+
     for(; cur < len; cur++ )
     {
         switch( HVALC_TBL[delim[cur]] )
@@ -431,14 +431,14 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             // field-content
             case 0:
                 continue;
-            
+
             // CR
             case 1:
                 // found LF
                 if( delim[cur+1] == LF )
                 {
                     size_t tail = cur;
-                    
+
                     // remove OWS
                     while( SPHT[delim[tail-1]] ){
                         tail--;
@@ -447,7 +447,7 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                     if( ( tail - hkey ) > maxhdrlen ){
                         return HTTP_EHDRLEN;
                     }
-                    
+
                     // calc value-length
                     ADD_HVAL( h, h->head, tail - h->head );
                     h->nheader++;
@@ -455,14 +455,14 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                     h->head = h->cur = cur + 2;
                     // set next parser
                     h->phase = HTTP_PHASE_HEADER;
-                    
+
                     return parse_header( h, buf, len, maxhdrlen );
                 }
                 // null-terminator
                 else if( !delim[cur+1] ){
                     goto CHECK_AGAIN;
                 }
-            
+
             // invalid
             default:
                 return HTTP_EHDRFMT;
@@ -475,7 +475,7 @@ CHECK_AGAIN:
         return HTTP_EHDRLEN;
     }
     h->cur = cur;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -486,7 +486,7 @@ static int parse_hkey( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     size_t cur = h->cur;
     uintptr_t klen = h->head;
     unsigned char c = 0;
-    
+
 RECHECK:
     if( cur < len )
     {
@@ -496,7 +496,7 @@ RECHECK:
             // invalid
             case 0:
                 return HTTP_EHDRFMT;
-            
+
             // COLON
             case 2:
                 // check length
@@ -504,7 +504,7 @@ RECHECK:
                 if( klen > maxhdrlen ){
                     return HTTP_EHDRLEN;
                 }
-                
+
                 // remove OWS
                 while( ++cur < len )
                 {
@@ -527,18 +527,18 @@ RECHECK:
                     }
                     break;
                 }
-                
+
                 // set key-index and hkey-length
                 ADD_HKEY( h, h->head, klen );
                 // set cursor
                 h->head = h->cur = cur;
                 // set next parser
                 h->phase = HTTP_PHASE_HVAL;
-                
+
                 if( cur >= len ){
                     return HTTP_EAGAIN;
                 }
-                
+
                 return parse_hval( h, buf, len, maxhdrlen );
         }
         delim[cur] = c;
@@ -549,10 +549,10 @@ RECHECK:
     else if( ( len - h->head ) > maxhdrlen ){
         return HTTP_EHDRLEN;
     }
-    
+
     // update parse cursor
     h->cur = len;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -560,7 +560,7 @@ RECHECK:
 static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *delim = memchr( buf + h->cur, CR, len - h->cur );
-    
+
     if( delim )
     {
         if( delim[1] == LF )
@@ -568,12 +568,12 @@ static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             // calc index(same as token-length)
             size_t slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
             match64bit_u src = { .bit = 0 };
-            
+
             // unsupported version
             if( delim[1] != LF || slen != VER_LEN ){
                 return HTTP_EVERSION;
             }
-            
+
             // check version
             src.bit = *((uint64_t*)(buf + h->head));
             // HTTP/1.1
@@ -600,26 +600,26 @@ static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                 h->head = h->cur = h->head + slen + 2;
                 // set next phase
                 h->phase = HTTP_PHASE_EOL;
-                
+
                 return parse_eol( h, buf );
             }
             // unsupported version
             else {
                 return HTTP_EVERSION;
             }
-            
+
             // skip CRLF
             h->head = h->cur = h->head + slen + 2;
             // set next phase
             h->phase = HTTP_PHASE_HEADER;
-            
+
             return parse_header( h, buf, len, maxhdrlen );
         }
         // invalid line format
         else if( delim[1] ){
             return HTTP_ELINEFMT;
         }
-        
+
         // update cursor
         h->cur = (uintptr_t)delim - (uintptr_t)buf;
     }
@@ -631,7 +631,7 @@ static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     else {
         h->cur = len;
     }
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -640,7 +640,7 @@ static int parse_uri( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                       uint16_t maxhdrlen )
 {
     char *delim = strchr_brk( buf + h->cur, len - h->cur, SP, URIC_TBL );
-    
+
     // EILSEQ: illegal byte sequence == HTTP_BAD_REQUEST
     if( errno )
     {
@@ -653,12 +653,12 @@ static int parse_uri( http_t *h, char *buf, size_t len, uint16_t maxurilen,
             if( h->protocol != HTTP_MGET ){
                 return HTTP_EMETHOD;
             }
-            
+
             // set next phase
             h->phase = HTTP_PHASE_DONE;
             goto CHECK_URI;
         }
-        
+
         // invalid uri string
         return HTTP_EBADURI;
     }
@@ -680,20 +680,20 @@ CHECK_URI:
         else if( h->phase == HTTP_PHASE_DONE ){
             return HTTP_SUCCESS;
         }
-        
+
         // update cursor and token head position
         h->head = h->cur = h->head + h->msglen + 1;
-        
+
         return parse_ver( h, buf, len, maxhdrlen );
     }
     // request-uri too long
     else if( len - h->head > maxurilen ){
         return HTTP_EURILEN;
     }
-    
+
     // update parse cursor
     h->cur = len;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -702,16 +702,16 @@ static int parse_method( http_t *h, char *buf, size_t len, uint16_t maxurilen,
                          uint16_t maxhdrlen )
 {
     char *delim = memchr( buf + h->cur, SP, len );
-    
+
     if( delim )
     {
         size_t slen = (uintptr_t)delim - (uintptr_t)buf;
         match64bit_u src = { .bit = 0 };
-        
+
         if( slen > METHOD_LEN ){
             return HTTP_EMETHOD;
         }
-        
+
         memcpy( src.str, buf, slen );
         // check method
         if( src.bit == M_GET.bit ){
@@ -747,17 +747,17 @@ static int parse_method( http_t *h, char *buf, size_t len, uint16_t maxurilen,
         h->head = h->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
         // set next phase
         h->phase = HTTP_PHASE_URI;
-        
+
         return parse_uri( h, buf, len, maxurilen, maxhdrlen );
     }
     // method not implemented
     else if( len > METHOD_LEN ){
         return HTTP_EMETHOD;
     }
-    
+
     // update cursor
     h->cur = len;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -769,29 +769,29 @@ int http_req_parse( http_t *h, char *buf, size_t len, uint16_t maxurilen,
     {
         case HTTP_PHASE_METHOD:
             return parse_method( h, buf, len, maxurilen, maxhdrlen );
-        
+
         case HTTP_PHASE_URI:
             return parse_uri( h, buf, len, maxurilen, maxhdrlen );
-        
+
         case HTTP_PHASE_VERSION:
             return parse_ver( h, buf, len, maxhdrlen );
 
         case HTTP_PHASE_EOL:
             return parse_eol( h, buf );
-            
+
         case HTTP_PHASE_HEADER:
             return parse_header( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_HKEY:
             return parse_hkey( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_HVAL:
             return parse_hval( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_DONE:
             return HTTP_SUCCESS;
     }
-    
+
     return HTTP_ERROR;
 }
 
@@ -800,7 +800,7 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     unsigned char *delim = (unsigned char*)buf;
     size_t cur = h->cur;
-    
+
     for(; cur < len; cur++ )
     {
         switch( PHRASE_TBL[delim[cur]] )
@@ -808,7 +808,7 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             // reason-phrase
             case 0:
                 continue;
-            
+
             // CR
             case 1:
                 // found LF
@@ -818,7 +818,7 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                     if( ( cur - h->head ) > UINT16_MAX ){
                         return HTTP_ELINEFMT;
                     }
-                    
+
                     // calc reason-length
                     h->msg = (uint8_t)h->head;
                     h->msglen = (uint16_t)(cur - h->head);
@@ -826,14 +826,14 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
                     h->head = h->cur = cur + 2;
                     // set next parser
                     h->phase = HTTP_PHASE_HEADER;
-                    
+
                     return parse_header( h, buf, len, maxhdrlen );
                 }
                 // null-terminator
                 else if( !delim[cur+1] ){
                     goto CHECK_AGAIN;
                 }
-            
+
             // invalid
             default:
                 return HTTP_EHDRFMT;
@@ -846,7 +846,7 @@ CHECK_AGAIN:
         return HTTP_EHDRLEN;
     }
     h->cur = cur;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -854,12 +854,12 @@ CHECK_AGAIN:
 static int parse_status( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *delim = memchr( buf + h->cur, SP, len - h->cur );
-    
+
     if( delim )
     {
         unsigned char *head = (unsigned char*)(buf + h->head);
         size_t slen = (uintptr_t)delim - (uintptr_t)head;
-        
+
         // invalid status code
         if( slen != STATUS_LEN ||
             head[0] < '1' || head[0] > '5' ||
@@ -867,7 +867,7 @@ static int parse_status( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             head[2] < '0' || head[2] > '9' ){
             return HTTP_ESTATUS;
         }
-        
+
         // set status
         h->protocol |= ( head[0] - 0x30 ) * 100 +
                        ( head[1] - 0x30 ) * 10 +
@@ -876,17 +876,17 @@ static int parse_status( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
         h->head = h->cur = h->head + slen + 1;
         // set next phase
         h->phase = HTTP_PHASE_REASON;
-        
+
         return parse_reason( h, buf, len, maxhdrlen );
     }
     // method not implemented
     else if( ( len - h->cur ) > STATUS_LEN ){
         return HTTP_ESTATUS;
     }
-    
+
     // update cursor
     h->cur = len;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -894,18 +894,18 @@ static int parse_status( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 static int parse_ver_res( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     char *delim = memchr( buf + h->cur, SP, len - h->cur );
-    
+
     if( delim )
     {
         // calc index(same as token-length)
         size_t slen = (uintptr_t)delim - (uintptr_t)buf;
-        
+
         if( slen == VER_LEN )
         {
             match64bit_u src = {
                 .bit = *((uint64_t*)(buf + h->head))
             };
-            
+
             // check version
             // HTTP/1.1
             if( src.bit == V_11.bit ){
@@ -923,19 +923,19 @@ static int parse_ver_res( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
             else {
                 return HTTP_EVERSION;
             }
-            
+
             // skip SP
             h->head = h->cur = VER_LEN + 1;
             // set next phase
             h->phase = HTTP_PHASE_STATUS;
-            
+
             return parse_status( h, buf, len, maxhdrlen );
         }
-        
+
         // HTTP/0.9 simple-response
         h->protocol = HTTP_V09;
         h->cur = 0;
-        
+
         return HTTP_SUCCESS;
     }
     // HTTP/0.9 simple-response
@@ -944,10 +944,10 @@ static int parse_ver_res( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
         h->cur = 0;
         return HTTP_SUCCESS;
     }
-    
+
     // update parse cursor
     h->cur = len;
-    
+
     return HTTP_EAGAIN;
 }
 
@@ -958,29 +958,29 @@ int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     {
         case HTTP_PHASE_VERSION_RES:
             return parse_ver_res( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_STATUS:
             return parse_status( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_REASON:
             return parse_reason( h, buf, len, maxhdrlen );
 
         case HTTP_PHASE_EOL:
             return parse_eol( h, buf );
-        
+
         case HTTP_PHASE_HEADER:
             return parse_header( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_HKEY:
             return parse_hkey( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_HVAL:
             return parse_hval( h, buf, len, maxhdrlen );
-        
+
         case HTTP_PHASE_DONE:
             return HTTP_SUCCESS;
     }
-    
+
     return HTTP_ERROR;
 }
 
@@ -988,11 +988,11 @@ int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 http_t *http_alloc( uint8_t maxheader )
 {
     http_t *h = (http_t*)calloc( 1, http_alloc_size( maxheader ) );
-    
+
     if( h ){
         h->maxheader = maxheader;
     }
-    
+
     return h;
 }
 
@@ -1003,22 +1003,22 @@ void http_free( http_t *h )
 }
 
 
-int http_getheader_at( http_t *h, uintptr_t *key, uint16_t *klen, 
+int http_getheader_at( http_t *h, uintptr_t *key, uint16_t *klen,
                        uintptr_t *val, uint16_t *vlen, uint8_t at )
 {
     if( at < h->nheader ){
         uint8_t *mem = GET_HKEY_PTR( h, at );
-    
+
         *key = *(uintptr_t*)mem;
         *klen = *(uint16_t*)&mem[sizeof( uintptr_t )];
-        
+
         mem += HKEY_SIZE;
         *val = *(uintptr_t*)mem;
         *vlen = *(uint16_t*)&mem[sizeof( uintptr_t )];
-        
+
         return 0;
     }
-    
+
     return -1;
 }
 
