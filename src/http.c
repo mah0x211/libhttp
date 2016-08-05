@@ -248,28 +248,27 @@ static const unsigned char HKEYC_TBL[256] = {
  *                  ; obsolete line folding
  *                  ; see https://tools.ietf.org/html/rfc7230#section-3.2.4
  */
-// 0 = field-content
-// 1 = CR
-// 3 = invalid
+// 1 = field-content
+// 2 = LF or CR
+// 0 = invalid
 static const unsigned char HVALC_TBL[256] = {
-//                             HT          CR
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    3, 3, 3, 3, 3, 3, 3,
+//                             HT LF       CR
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0,
 //  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //  0  1  2  3  4  5  6  7  8  9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //  :  ;  <  =  >  ?  @
-    0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1,
 //  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //  Z  [  \  ]  ^  _  `
-    0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1,
 //  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 //  z  {  |  }  ~
-    0, 0, 0, 0, 0,
-    3
+    1, 1, 1, 1, 1
 };
 
 
@@ -370,8 +369,13 @@ static int parse_eol( http_t *h, char *buf )
                 return HTTP_EAGAIN;
             }
             else if( str[1] == LF ){
+                // skip CR
+                h->cur++;
+        case LF:
+                // skip LF
+                h->cur++;
                 // calc and save index
-                h->head = h->cur = h->cur + 2;
+                h->head = h->cur;
                 h->phase = HTTP_PHASE_DONE;
                 return HTTP_SUCCESS;
             }
@@ -391,6 +395,13 @@ static int parse_header( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
         // need more bytes
         case 0:
             return HTTP_EAGAIN;
+
+        // check header-tail
+        case LF:
+            // calc and save index
+            h->head = h->cur = h->cur + 1;
+            h->phase = HTTP_PHASE_DONE;
+            return HTTP_SUCCESS;
 
         // check header-tail
         case CR:
@@ -423,45 +434,54 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     unsigned char *delim = (unsigned char*)buf;
     uintptr_t hkey = *(uintptr_t*)GET_HKEY_PTR( h, h->nheader );
     size_t cur = h->cur;
+    size_t tail = 0;
+    unsigned char c = 0;
 
     for(; cur < len; cur++ )
     {
-        switch( HVALC_TBL[delim[cur]] )
+        c = delim[cur];
+        switch( HVALC_TBL[c] )
         {
-            // field-content
-            case 0:
+            case 1:
                 continue;
 
-            // CR
-            case 1:
+            // LF or CR
+            case 2:
+                tail = cur;
                 // found LF
-                if( delim[cur+1] == LF )
-                {
-                    size_t tail = cur;
-
-                    // remove OWS
-                    while( SPHT[delim[tail-1]] ){
-                        tail--;
-                    }
-                    // check length
-                    if( ( tail - hkey ) > maxhdrlen ){
-                        return HTTP_EHDRLEN;
-                    }
-
-                    // calc value-length
-                    ADD_HVAL( h, h->head, tail - h->head );
-                    h->nheader++;
-                    // skip CRLF
-                    h->head = h->cur = cur + 2;
-                    // set next parser
-                    h->phase = HTTP_PHASE_HEADER;
-
-                    return parse_header( h, buf, len, maxhdrlen );
+                if( c == LF ){
+                    cur++;
+                }
+                else if( delim[cur + 1] == LF ){
+                    cur += 2;
                 }
                 // null-terminator
-                else if( !delim[cur+1] ){
+                else if( !delim[cur + 1] ){
                     goto CHECK_AGAIN;
                 }
+                else {
+                    return HTTP_EHDRFMT;
+                }
+
+                // found LF
+                // remove OWS
+                while( SPHT[delim[tail-1]] ){
+                    tail--;
+                }
+                // check length
+                if( ( tail - hkey ) > maxhdrlen ){
+                    return HTTP_EHDRLEN;
+                }
+
+                // calc value-length
+                ADD_HVAL( h, h->head, tail - h->head );
+                h->nheader++;
+                // skip CRLF
+                h->head = h->cur = cur;
+                // set next parser
+                h->phase = HTTP_PHASE_HEADER;
+
+                return parse_header( h, buf, len, maxhdrlen );
 
             // invalid
             default:
@@ -559,69 +579,67 @@ RECHECK:
 
 static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
-    char *delim = memchr( buf + h->cur, CR, len - h->cur );
+    char *delim = memchr( buf + h->cur, LF, len - h->cur );
 
     if( delim )
     {
-        if( delim[1] == LF )
+        // calc index(same as token-length)
+        size_t slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
+        match64bit_u src = { .bit = 0 };
+
+        // calc index(same as token-length)
+        if( *(delim - 1) == CR ){
+            slen = (uintptr_t)delim - (uintptr_t)buf - h->head - 1;
+        }
+        else {
+            slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
+        }
+
+        // unsupported version
+        if( slen != VER_LEN ){
+            return HTTP_EVERSION;
+        }
+
+        // check version
+        src.bit = *((uint64_t*)(buf + h->head));
+        // HTTP/1.1
+        if( src.bit == V_11.bit ){
+            h->protocol |= HTTP_V11;
+        }
+        // HTTP/1.0
+        else if( src.bit == V_10.bit )
         {
-            // calc index(same as token-length)
-            size_t slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
-            match64bit_u src = { .bit = 0 };
-
-            // unsupported version
-            if( delim[1] != LF || slen != VER_LEN ){
-                return HTTP_EVERSION;
+            // illegal request if method is not the GET, HEAD or POST method
+            if( h->protocol > HTTP_MPOST ){
+                return HTTP_EMETHOD;
             }
-
-            // check version
-            src.bit = *((uint64_t*)(buf + h->head));
-            // HTTP/1.1
-            if( src.bit == V_11.bit ){
-                h->protocol |= HTTP_V11;
+            h->protocol |= HTTP_V10;
+        }
+        // HTTP/0.9
+        else if( src.bit == V_09.bit )
+        {
+            // illegal request if method is not the GET method
+            if( h->protocol != HTTP_MGET ){
+                return HTTP_EMETHOD;
             }
-            // HTTP/1.0
-            else if( src.bit == V_10.bit )
-            {
-                // illegal request if method is not the GET, HEAD or POST method
-                if( h->protocol > HTTP_MPOST ){
-                    return HTTP_EMETHOD;
-                }
-                h->protocol |= HTTP_V10;
-            }
-            // HTTP/0.9
-            else if( src.bit == V_09.bit )
-            {
-                // illegal request if method is not the GET method
-                if( h->protocol != HTTP_MGET ){
-                    return HTTP_EMETHOD;
-                }
-                // skip CRLF
-                h->head = h->cur = h->head + slen + 2;
-                // set next phase
-                h->phase = HTTP_PHASE_EOL;
-
-                return parse_eol( h, buf );
-            }
-            // unsupported version
-            else {
-                return HTTP_EVERSION;
-            }
-
             // skip CRLF
-            h->head = h->cur = h->head + slen + 2;
+            h->head = h->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
             // set next phase
-            h->phase = HTTP_PHASE_HEADER;
+            h->phase = HTTP_PHASE_EOL;
 
-            return parse_header( h, buf, len, maxhdrlen );
+            return parse_eol( h, buf );
         }
-        // invalid line format
-        else if( delim[1] ){
-            return HTTP_ELINEFMT;
+        // unsupported version
+        else {
+            return HTTP_EVERSION;
         }
 
-        // update cursor
-        h->cur = (uintptr_t)delim - (uintptr_t)buf;
+        // skip LF
+        h->head = h->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
+        // set next phase
+        h->phase = HTTP_PHASE_HEADER;
+
+        return parse_header( h, buf, len, maxhdrlen );
     }
     // invalid version format
     else if( ( len - h->head ) > VER_LEN ){
@@ -645,7 +663,8 @@ static int parse_uri( http_t *h, char *buf, size_t len, uint16_t maxurilen,
     if( errno )
     {
         // probably, HTTP/0.9 request
-        if( delim[0] == CR && delim[1] == LF && !delim[2] )
+        if( ( delim[0] == LF && !delim[1] ) ||
+            ( delim[0] == CR && delim[1] == LF && !delim[2] ) )
         {
             // reset errno
             errno = 0;
@@ -800,39 +819,49 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     unsigned char *delim = (unsigned char*)buf;
     size_t cur = h->cur;
+    unsigned char c = 0;
+    size_t tail = 0;
 
     for(; cur < len; cur++ )
     {
-        switch( PHRASE_TBL[delim[cur]] )
+        c = delim[cur];
+        switch( HVALC_TBL[c] )
         {
-            // reason-phrase
-            case 0:
+            case 1:
                 continue;
 
-            // CR
-            case 1:
+            // LF or CR
+            case 2:
+                tail = cur;
                 // found LF
-                if( delim[cur+1] == LF )
-                {
-                    // phrase-length too large
-                    if( ( cur - h->head ) > UINT16_MAX ){
-                        return HTTP_EREASON;
-                    }
-
-                    // calc phrase-length
-                    h->msg = (uint8_t)h->head;
-                    h->msglen = (uint16_t)(cur - h->head);
-                    // skip CRLF
-                    h->head = h->cur = cur + 2;
-                    // set next parser
-                    h->phase = HTTP_PHASE_HEADER;
-
-                    return parse_header( h, buf, len, maxhdrlen );
+                if( c == LF ){
+                    cur++;
+                }
+                else if( delim[cur+1] == LF ){
+                    cur += 2;
                 }
                 // null-terminator
                 else if( !delim[cur+1] ){
                     goto CHECK_AGAIN;
                 }
+                else {
+                    return HTTP_EREASON;
+                }
+
+                // phrase-length too large
+                if( ( cur - h->head ) > UINT16_MAX ){
+                    return HTTP_EREASON;
+                }
+
+                // calc phrase-length
+                h->msg = (uint8_t)h->head;
+                h->msglen = (uint16_t)(cur - h->head);
+                // skip CRLF
+                h->head = h->cur = cur;
+                // set next parser
+                h->phase = HTTP_PHASE_HEADER;
+
+                return parse_header( h, buf, len, maxhdrlen );
 
             // invalid
             default:
