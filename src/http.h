@@ -2,9 +2,9 @@
  *  Copyright 2015 Masatoshi Teruya All rights reserved.
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to 
- *  deal in the Software without restriction, including without limitation the 
- *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+ *  of this software and associated documentation files (the "Software"), to
+ *  deal in the Software without restriction, including without limitation the
+ *  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  *  sell copies of the Software, and to permit persons to whom the Software is
  *  furnished to do so, subject to the following conditions:
  *
@@ -13,9 +13,9 @@
  *
  *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL 
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
  *  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  *  IN THE SOFTWARE.
  *
@@ -109,7 +109,7 @@ enum {
     HTTP_CONTINUE = 100,
     HTTP_SWITCHING_PROTOCOLS,
     HTTP_PROCESSING,
-    
+
     // 200-208
     HTTP_OK = 200,
     HTTP_CREATED,
@@ -122,7 +122,7 @@ enum {
     HTTP_ALREADY_REPORTED,
     // 226
     HTTP_IM_USED = 226,
-    
+
     // 300-305
     HTTP_MULTIPLE_CHOICES = 300,
     HTTP_MOVED_PERMANENTLY,
@@ -133,7 +133,7 @@ enum {
     // 307-308
     HTTP_TEMPORARY_REDIRECT = 307,
     HTTP_PERMANENT_REDIRECT,
-    
+
     // 400-417
     HTTP_BAD_REQUEST = 400,
     HTTP_UNAUTHORIZED,
@@ -165,7 +165,7 @@ enum {
     HTTP_TOO_MANY_REQUESTS,
     // 431
     HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
-    
+
     // 500-508
     HTTP_INTERNAL_SERVER_ERROR = 500,
     HTTP_NOT_IMPLEMENTED,
