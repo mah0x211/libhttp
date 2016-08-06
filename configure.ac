@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_LIBTOOL
 
 # Checks for header files.
@@ -30,7 +31,7 @@ AC_CHECK_FUNCS([ \
 ])
 
 #
-# debug option 
+# debug option
 #
 AC_ARG_ENABLE(
     [debug],
@@ -42,6 +43,12 @@ AS_IF([test "$ENABLE_DEBUG" != "no"],
       AC_SUBST([CFLAGS], ["-g -O0"]) ],
     [ AC_SUBST([CFLAGS], ["-O3"]) ]
 )
+
+#
+# warnings
+#
+AC_SUBST([WARNINGS], ["-Wall -Wno-trigraphs -Wmissing-field-initializers -Wmissing-prototypes -Wreturn-type -Wmissing-braces -Wparentheses -Wswitch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare -Wextra -Wwrite-strings -Wcast-qual -Wredundant-decls -Wmissing-declarations -Wpointer-arith -Wstrict-prototypes -Wnested-externs -Wformat=2"])
+
 
 AC_CONFIG_FILES([Makefile \
                  libhttp.pc \

@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I../src
-AM_CFLAGS = -D TESTS
+AM_CFLAGS = @WARNINGS@ -D TESTS
 
 check_PROGRAMS = test_method
 test_method_LDFLAGS = -L../src -lhttp
