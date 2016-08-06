@@ -13,6 +13,12 @@ void test_reason( void )
             0,
             "HTTP/1.0 200 OK\r\n\r\n"
         },
+        {
+            HTTP_SUCCESS,
+            HTTP_OK | HTTP_V10,
+            0,
+            "HTTP/1.0 200 \r\n\r\n"
+        },
         // invalid status code
         {
             HTTP_EREASON,
@@ -30,6 +36,12 @@ void test_reason( void )
             HTTP_OK | HTTP_V10,
             0,
             "HTTP/1.0 200 OK\n\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_OK | HTTP_V10,
+            0,
+            "HTTP/1.0 200 \n\n"
         },
 
         // end of request
