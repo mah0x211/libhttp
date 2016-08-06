@@ -260,7 +260,7 @@ static const unsigned char HKEYC_TBL[256] = {
 // 1 = field-content
 // 2 = LF or CR
 // 0 = invalid
-static const unsigned char HVALC_TBL[256] = {
+static const unsigned char VCHAR[256] = {
 //                             HT LF       CR
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0,
@@ -416,7 +416,7 @@ static int parse_hval( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     for(; cur < len; cur++ )
     {
         c = delim[cur];
-        switch( HVALC_TBL[c] )
+        switch( VCHAR[c] )
         {
             case 1:
                 continue;
@@ -801,7 +801,7 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     for(; cur < len; cur++ )
     {
         c = delim[cur];
-        switch( HVALC_TBL[c] )
+        switch( VCHAR[c] )
         {
             case 1:
                 continue;
