@@ -21,4 +21,8 @@ check_PROGRAMS += test_status
 test_status_LDFLAGS = -L../src -lhttp
 test_status_SOURCES = test_status.c
 
+check_PROGRAMS += test_reason
+test_reason_LDFLAGS = -L../src -lhttp
+test_reason_SOURCES = test_reason.c
+
 TESTS = $(check_PROGRAMS)
