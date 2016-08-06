@@ -235,6 +235,15 @@ static const unsigned char HKEYC_TBL[256] = {
 
 /**
  * RFC 7230
+ * 3.1.2.  Status Line
+ * https://tools.ietf.org/html/rfc7230#section-3.1.2
+ *
+ * reason-phrase  = *( HTAB / SP / VCHAR / obs-text )
+ *
+ * VCHAR          = %x21-7E
+ * obs-text       = %x80-FF
+ *
+ * RFC 7230
  * 3.2.  Header Fields
  * https://tools.ietf.org/html/rfc7230#section-3.2
  *
@@ -271,39 +280,6 @@ static const unsigned char HVALC_TBL[256] = {
     1, 1, 1, 1, 1
 };
 
-
-/**
- * RFC 7230
- * 3.1.2.  Status Line
- * https://tools.ietf.org/html/rfc7230#section-3.1.2
- *
- * reason-phrase  = *( HTAB / SP / VCHAR / obs-text )
- *
- * VCHAR          = %x21-7E
- * obs-text       = %x80-FF
- */
-// 0 = HTAB / SP / VCHAR / obs-text
-// 3 = invalid
-static const unsigned char PHRASE_TBL[256] = {
-//                             HT          CR
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    3, 3, 3, 3, 3, 3, 3,
-//  SP !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  0  1  2  3  4  5  6  7  8  9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  :  ;  <  =  >  ?  @
-    0, 0, 0, 0, 0, 0, 0,
-//  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  Z  [  \  ]  ^  _  `
-    0, 0, 0, 0, 0, 0, 0,
-//  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//  z  {  |  }  ~
-    0, 0, 0, 0, 0,
-    3
-};
 
 
 static const unsigned char SPHT[256] = {
