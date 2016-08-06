@@ -61,6 +61,56 @@ static void test_header( void )
             "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
             "\r\n"
         },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\r\n"
+            "Host1: \r\n"
+            "Host2: example.com\r\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
+            "\r\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\r\n"
+            "Host1:\r\n"
+            "Host2: example.com\r\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
+            "\r\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\r\n"
+            "Host1:       \r\n"
+            "Host2: example.com\r\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
+            "\r\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\r\n"
+            "Host1: example.com\r\n"
+            "Host2: \r\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
+            "\r\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\r\n"
+            "Host1: example.com\r\n"
+            "Host2: example.com\r\n"
+            "Host3: \r\n"
+            "\r\n"
+        },
         // invalid headers
         {
             HTTP_EHDRFMT,
@@ -161,6 +211,56 @@ static void test_header( void )
             "Host1: example.com\n"
             "Host2: example.com\n"
             "Host3: 1.example.com 2.example.com\t3.example.com\n"
+            "\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\n"
+            "Host1: \n"
+            "Host2: example.com\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\n"
+            "\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\n"
+            "Host1:\n"
+            "Host2: example.com\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\n"
+            "\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\n"
+            "Host1:    \n"
+            "Host2: example.com\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\n"
+            "\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\n"
+            "Host1: example.com\n"
+            "Host2: \n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\n"
+            "\n"
+        },
+        {
+            HTTP_SUCCESS,
+            HTTP_MGET | HTTP_V10,
+            2,
+            "GET /foo/bar/baz HTTP/1.0\n"
+            "Host1: example.com\n"
+            "Host2: example.com\n"
+            "Host3: \n"
             "\n"
         },
         // invalid headers
