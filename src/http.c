@@ -513,13 +513,19 @@ RECHECK:
                     {
                         if( !delim[cur+1] ){
                             h->cur = cur;
-                            h->phase = HTTP_PHASE_HEADER;
-                            return EAGAIN;
+                            return HTTP_EAGAIN;
                         }
                         else if( delim[cur+1] == LF ){
-                            h->head = klen = cur += 2;
-                            goto RECHECK;
+                            h->head = h->cur = cur + 2;
+                            h->phase = HTTP_PHASE_HEADER;
+                            return parse_header( h, buf, len, maxhdrlen );
                         }
+                        return HTTP_EHDRFMT;
+                    }
+                    else if( delim[cur] == LF ){
+                        h->head = h->cur = cur + 1;
+                        h->phase = HTTP_PHASE_HEADER;
+                        return parse_header( h, buf, len, maxhdrlen );
                     }
                     break;
                 }
