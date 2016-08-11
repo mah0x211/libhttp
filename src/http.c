@@ -706,46 +706,90 @@ static int parse_method( http_t *h, char *buf, size_t len, uint16_t maxurilen,
 
     if( delim )
     {
-        size_t slen = (uintptr_t)delim - (uintptr_t)buf;
+        char *head = buf + h->head;
+        size_t slen = (uintptr_t)delim - (uintptr_t)head;
         match64bit_u src = { .bit = 0 };
 
-        if( slen > METHOD_LEN ){
-            return HTTP_EMETHOD;
-        }
+        switch( slen ){
+            case 3:
+                src.str[0] = head[0];
+                src.str[1] = head[1];
+                src.str[2] = head[2];
+                if( src.bit == M_GET.bit ){
+                    h->protocol = HTTP_MGET;
+                    break;
+                }
+                else if( src.bit == M_PUT.bit ){
+                    h->protocol = HTTP_MPUT;
+                    break;
+                }
+                return HTTP_EMETHOD;
 
-        memcpy( src.str, buf, slen );
-        // check method
-        if( src.bit == M_GET.bit ){
-            h->protocol = HTTP_MGET;
-        }
-        else if( src.bit == M_POST.bit ){
-            h->protocol = HTTP_MPOST;
-        }
-        else if( src.bit == M_PUT.bit ){
-            h->protocol = HTTP_MPUT;
-        }
-        else if( src.bit == M_DELETE.bit ){
-            h->protocol = HTTP_MDELETE;
-        }
-        else if( src.bit == M_HEAD.bit ){
-            h->protocol = HTTP_MHEAD;
-        }
-        else if( src.bit == M_OPTIONS.bit ){
-            h->protocol = HTTP_MOPTIONS;
-        }
-        else if( src.bit == M_TRACE.bit ){
-            h->protocol = HTTP_MTRACE;
-        }
-        else if( src.bit == M_CONNECT.bit ){
-            h->protocol = HTTP_MCONNECT;
-        }
-        // method not implemented
-        else {
-            return HTTP_EMETHOD;
+            case 4:
+                src.str[0] = head[0];
+                src.str[1] = head[1];
+                src.str[2] = head[2];
+                src.str[3] = head[3];
+                if( src.bit == M_POST.bit ){
+                    h->protocol = HTTP_MPOST;
+                    break;
+                }
+                else if( src.bit == M_HEAD.bit ){
+                    h->protocol = HTTP_MHEAD;
+                    break;
+                }
+                return HTTP_EMETHOD;
+
+            case 5:
+                src.str[0] = head[0];
+                src.str[1] = head[1];
+                src.str[2] = head[2];
+                src.str[3] = head[3];
+                src.str[4] = head[4];
+                if( src.bit == M_TRACE.bit ){
+                    h->protocol = HTTP_MTRACE;
+                    break;
+                }
+                return HTTP_EMETHOD;
+
+            case 6:
+                src.str[0] = head[0];
+                src.str[1] = head[1];
+                src.str[2] = head[2];
+                src.str[3] = head[3];
+                src.str[4] = head[4];
+                src.str[5] = head[5];
+                if( src.bit == M_DELETE.bit ){
+                    h->protocol = HTTP_MDELETE;
+                    break;
+                }
+                return HTTP_EMETHOD;
+
+            case 7:
+                src.str[0] = head[0];
+                src.str[1] = head[1];
+                src.str[2] = head[2];
+                src.str[3] = head[3];
+                src.str[4] = head[4];
+                src.str[5] = head[5];
+                src.str[6] = head[6];
+                if( src.bit == M_OPTIONS.bit ){
+                    h->protocol = HTTP_MOPTIONS;
+                    break;
+                }
+                else if( src.bit == M_CONNECT.bit ){
+                    h->protocol = HTTP_MCONNECT;
+                    break;
+                }
+                return HTTP_EMETHOD;
+
+            // method not implemented
+            default:
+                return HTTP_EMETHOD;
         }
 
         // update parse cursor, token-head and url head
-        h->head = h->cur = (uintptr_t)delim - (uintptr_t)buf + 1;
+        h->head = h->cur = h->cur + slen + 1;
         // set next phase
         h->phase = HTTP_PHASE_URI;
 

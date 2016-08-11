@@ -27,7 +27,6 @@ AC_CHECK_FUNCS([ \
     malloc \
     calloc \
     free \
-    memcpy \
 ])
 
 #
