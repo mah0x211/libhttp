@@ -176,7 +176,7 @@ static void test_version_res( void )
 
 #ifdef TESTS
 
-int main(int argc, const char * argv[])
+int main(void)
 {
     test_version();
     test_version_res();

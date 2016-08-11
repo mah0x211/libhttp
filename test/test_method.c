@@ -352,7 +352,7 @@ static void test_method( void )
 
 #ifdef TESTS
 
-int main(int argc, const char * argv[])
+int main(void)
 {
     test_method();
     return 0;

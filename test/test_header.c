@@ -418,7 +418,7 @@ static void test_header_res( void )
 
 #ifdef TESTS
 
-int main(int argc, const char * argv[])
+int main(void)
 {
     test_header();
     test_header_res();

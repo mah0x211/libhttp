@@ -159,7 +159,7 @@ static void test_status( void )
 
 #ifdef TESTS
 
-int main(int argc, const char * argv[])
+int main(void)
 {
     test_status();
     return 0;

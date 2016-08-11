@@ -1,6 +1,6 @@
 #include "test_http.h"
 
-void test_reason( void )
+static void test_reason( void )
 {
     test_req_t req[] = {
         //
@@ -67,7 +67,7 @@ void test_reason( void )
 
 #ifdef TESTS
 
-int main(int argc, const char * argv[])
+int main(void)
 {
     test_reason();
     return 0;
