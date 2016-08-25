@@ -573,9 +573,6 @@ static int parse_ver( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
         if( *(delim - 1) == CR ){
             slen = (uintptr_t)delim - (uintptr_t)buf - h->head - 1;
         }
-        else {
-            slen = (uintptr_t)delim - (uintptr_t)buf - h->head;
-        }
 
         // unsupported version
         if( slen != VER_LEN ){
@@ -846,7 +843,6 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
     unsigned char *delim = (unsigned char*)buf;
     size_t cur = h->cur;
     unsigned char c = 0;
-    size_t tail = 0;
 
     for(; cur < len; cur++ )
     {
@@ -858,7 +854,6 @@ static int parse_reason( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 
             // LF or CR
             case 2:
-                tail = cur;
                 // found LF
                 if( c == LF ){
                     cur++;
