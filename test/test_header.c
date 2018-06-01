@@ -416,12 +416,38 @@ static void test_header_res( void )
     http_free( r );
 }
 
+
+static void test_partial_empty_header( void )
+{
+    char chunked[] =
+            "HTTP/1.1 200 OK\r\n"
+            "Host1:  \t  \r";
+    char completed[] =
+            "HTTP/1.1 200 OK\r\n"
+            "Host1:  \t  \r\n"
+            "Host2: example.com\r\n"
+            "Host3: 1.example.com 2.example.com\t3.example.com\r\n"
+            "\r\n";
+    http_t *r = http_alloc(3);
+    int rc;
+
+    rc = http_res_parse( r, chunked, sizeof(chunked), UINT16_MAX );
+    assert( rc == HTTP_EAGAIN );
+    rc = http_res_parse( r, completed, sizeof(completed), UINT16_MAX );
+    assert( rc == HTTP_SUCCESS );
+    assert( r->nheader == 2 );
+    assert( r->protocol == (HTTP_OK|HTTP_V11) );
+
+    http_free( r );
+}
+
 #ifdef TESTS
 
 int main(void)
 {
     test_header();
     test_header_res();
+    test_partial_empty_header();
     return 0;
 }
 
