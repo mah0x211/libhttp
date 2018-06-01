@@ -489,7 +489,7 @@ RECHECK:
         c = HKEYC_TBL[delim[cur]];
         switch( c )
         {
-            // invalid
+            // illegal byte sequence
             case 0:
                 return HTTP_EHDRFMT;
 
@@ -500,6 +500,8 @@ RECHECK:
                 if( klen > maxhdrlen ){
                     return HTTP_EHDRLEN;
                 }
+                // update parse cursor
+                h->cur = cur;
 
                 // remove OWS
                 while( ++cur < len )
@@ -508,11 +510,11 @@ RECHECK:
                     if( SPHT[delim[cur]] ){
                         continue;
                     }
-                    // empty field
+                    // empty hval
                     else if( delim[cur] == CR )
                     {
+                        // require LF
                         if( !delim[cur+1] ){
-                            h->cur = cur;
                             return HTTP_EAGAIN;
                         }
                         else if( delim[cur+1] == LF ){
