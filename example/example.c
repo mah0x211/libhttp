@@ -20,21 +20,21 @@ static void keys( http_t *r, char *buf )
     uint16_t klen, vlen;
     char k[1024*8];
     char v[1024*8];
-    
+
     for( i = 0; i < r->nheader; i++ ){
         http_getheader_at( r, &key, &klen, &val, &vlen, i );
         memcpy( k, buf + key, klen );
         k[klen] = 0;
         memcpy( v, buf + val, vlen );
         v[vlen] = 0;
-        
+
         printf("%d:\t[%s][%s]\n", i, k, v );
     }
 }
 
 static void parse_request( void )
 {
-    char req[] = 
+    char req[] =
         "GET /mah0x211/libhttp HTTP/1.1\r\n"
         "Host: github.com\r\n"
         "Connection: keep-alive\r\n"
@@ -52,14 +52,14 @@ static void parse_request( void )
     uint16_t maxhdrlen = UINT16_MAX;
     uint8_t nheader = 20;
     http_t *r = http_alloc( nheader );
-    int rc = http_req_parse( r, req, len, maxurilen, maxhdrlen );
-    
+    int rc = http_parse_request( r, req, len, maxurilen, maxhdrlen );
+
     assert( rc == HTTP_SUCCESS );
     assert( http_method(r) == HTTP_MGET );
     assert( http_version(r) == HTTP_V11 );
     assert( r->nheader == 10 );
     keys( r, req );
-    
+
     http_free( r );
 }
 
@@ -91,23 +91,23 @@ static void parse_response( void )
     size_t len = sizeof( res );
     uint16_t maxhdrlen = UINT16_MAX;
     http_t *r = http_alloc(20);
-    int rc = http_res_parse( r, res, len, maxhdrlen );
+    int rc = http_parse_response( r, res, len, maxhdrlen );
     assert( rc == HTTP_SUCCESS );
     assert( http_version(r) == HTTP_V11 );
     assert( http_status(r) == HTTP_OK );
     assert( r->nheader == 19 );
     keys( r, res );
-    
+
     http_free( r );
 }
 
 
-int main( int argc, const char *argv[] ) 
+int main( int argc, const char *argv[] )
 {
     printf("parse_request:\n");
     parse_request();
     printf("parse_response:\n");
     parse_response();
-    
+
     return 0;
 }
