@@ -82,7 +82,8 @@ static void test_uri( void )
 
     while( ptr->protocol )
     {
-        rc = http_req_parse( r, ptr->entity, strlen(ptr->entity), 15, INT16_MAX );
+        rc = http_parse_request( r, ptr->entity, strlen(ptr->entity), 15,
+                                 INT16_MAX );
         assert( rc == ptr->rc );
         if( rc == HTTP_SUCCESS ){
             assert( r->protocol == ptr->protocol );

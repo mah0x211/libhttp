@@ -317,7 +317,8 @@ static void test_header( void )
 
     while( ptr->protocol )
     {
-        rc = http_req_parse( r, ptr->entity, strlen(ptr->entity), INT16_MAX, 63 );
+        rc = http_parse_request( r, ptr->entity, strlen(ptr->entity), INT16_MAX,
+                                 63 );
         assert( rc == ptr->rc );
         assert( r->nheader == ptr->nheader );
         if( rc == HTTP_SUCCESS ){
@@ -404,7 +405,8 @@ static void test_header_res( void )
 
     while( ptr->protocol )
     {
-        rc = http_res_parse( r, ptr->entity, strlen(ptr->entity), UINT16_MAX );
+        rc = http_parse_response( r, ptr->entity, strlen(ptr->entity),
+                                  UINT16_MAX );
         assert( rc == ptr->rc );
         assert( r->nheader == ptr->nheader );
         if( rc == HTTP_SUCCESS ){
@@ -431,9 +433,9 @@ static void test_partial_empty_header( void )
     http_t *r = http_alloc(3);
     int rc;
 
-    rc = http_res_parse( r, chunked, sizeof(chunked), UINT16_MAX );
+    rc = http_parse_response( r, chunked, sizeof(chunked), UINT16_MAX );
     assert( rc == HTTP_EAGAIN );
-    rc = http_res_parse( r, completed, sizeof(completed), UINT16_MAX );
+    rc = http_parse_response( r, completed, sizeof(completed), UINT16_MAX );
     assert( rc == HTTP_SUCCESS );
     assert( r->nheader == 2 );
     assert( r->protocol == (HTTP_OK|HTTP_V11) );

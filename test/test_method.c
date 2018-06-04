@@ -338,7 +338,7 @@ static void test_method( void )
 
     while( ptr->protocol )
     {
-        rc = http_req_parse( r, ptr->entity, strlen( ptr->entity ),
+        rc = http_parse_request( r, ptr->entity, strlen( ptr->entity ),
                              INT16_MAX, INT16_MAX );
         assert( rc == ptr->rc );
         if( rc == HTTP_SUCCESS ){
