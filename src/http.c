@@ -806,8 +806,8 @@ static int parse_method( http_t *h, char *buf, size_t len, uint16_t maxurilen,
 }
 
 
-int http_req_parse( http_t *h, char *buf, size_t len, uint16_t maxurilen,
-                    uint16_t maxhdrlen )
+int http_parse_request( http_t *h, char *buf, size_t len, uint16_t maxurilen,
+                        uint16_t maxhdrlen )
 {
     switch( h->phase )
     {
@@ -1004,7 +1004,7 @@ static int parse_ver_res( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 }
 
 
-int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
+int http_parse_response( http_t *h, char *buf, size_t len, uint16_t maxhdrlen )
 {
     switch( h->phase )
     {

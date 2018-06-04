@@ -215,17 +215,17 @@ http_t *http_alloc( uint8_t maxheader );
 /**
  * initialize data members
  */
-#define http_init(h) do{ \
-    *(h) = (http_t){ \
-        .cur = 0, \
-        .head = 0, \
-        .phase = 0, \
-        .protocol = 0, \
-        .msg = 0, \
-        .msglen = 0, \
-        .nheader = 0, \
+#define http_init(h) do{            \
+    *(h) = (http_t){                \
+        .cur = 0,                   \
+        .head = 0,                  \
+        .phase = 0,                 \
+        .protocol = 0,              \
+        .msg = 0,                   \
+        .msglen = 0,                \
+        .nheader = 0,               \
         .maxheader = (h)->maxheader \
-    }; \
+    };                              \
 }while(0)
 
 
@@ -269,14 +269,14 @@ void http_free( http_t *h );
 /**
  * parsing the http 0.9/1.0/1.1 request
  */
-int http_req_parse( http_t *h, char *buf, size_t len, uint16_t maxurilen,
-                    uint16_t maxhdrlen );
+int http_parse_request( http_t *h, char *buf, size_t len, uint16_t maxurilen,
+                        uint16_t maxhdrlen );
 
 
 /**
  * parsing the http 0.9/1.0/1.1 response
  */
-int http_res_parse( http_t *h, char *buf, size_t len, uint16_t maxhdrlen );
+int http_parse_response( http_t *h, char *buf, size_t len, uint16_t maxhdrlen );
 
 #endif
 
